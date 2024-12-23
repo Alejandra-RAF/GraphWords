@@ -59,9 +59,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install boto3
 
-      - name: List repository structure
-        run: ls -R
-
+      - name: Change working directory
+        run: cd src
+        
       - name: Run deployment script
         env:
           AWS_ACCESS_KEY_ID: ASIAUZTGPSLANRECIUZM
@@ -70,4 +70,4 @@ jobs:
           LOCALSTACK_HOSTNAME: http://localhost:4566
           AWS_DEFAULT_REGION: us-east-1
         run: |
-          python src/deployment.py
+          python deployment.py
