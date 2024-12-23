@@ -36,8 +36,11 @@ jobs:
           echo "[default]" > ~/.aws/config
           echo "region = $AWS_DEFAULT_REGION" >> ~/.aws/config
 
-      - name: Test AWS Credentials
-        run: aws ec2 describe-vpcs
+      - name: Test AWS CLI
+        run: |
+          echo "Testing AWS CLI with credentials..."
+          aws sts get-caller-identity
+          aws ec2 describe-vpcs
 
       - name: Run deployment script
         env:
