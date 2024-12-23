@@ -257,13 +257,15 @@ def main():
     lambda_arn = "arn:aws:lambda:us-east-1:000000000000:function:LambdaScriptApi"  # ARN de la Lambda API
     resource_id = create_resource_and_method(api_id, root_id, "Dijkstra", lambda_arn)
     deploy_api(api_id, "test")
+
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     
     # Scripts `Create_Lamdba_*` para configurar Lambdas locales
     create_scripts = [
-        "./lambdas/create_lambda_datalake.py",
-        "./lambdas/create_Lambda_datamart.py",
-        "./lambdas/create_Lambda_graph.py",
-        "./lambdas/create_lambda_api.py"
+        os.path.join(BASE_DIR, "lambdas/create_lambda_datalake.py"),
+        os.path.join(BASE_DIR, "lambdas/create_lambda_datamart.py"),
+        os.path.join(BASE_DIR, "lambdas/create_lambda_graph.py"),
+        os.path.join(BASE_DIR, "lambdas/create_lambda_api.py")
     ]
     
     for script in create_scripts:
