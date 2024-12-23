@@ -1,4 +1,4 @@
-name: GraphWord Deployment with AWS
+name: GraphWord Deployment
 
 on:
   push:
@@ -36,6 +36,8 @@ jobs:
           echo "[default]" > ~/.aws/config
           echo "region = $AWS_DEFAULT_REGION" >> ~/.aws/config
 
+      - name: Test AWS Credentials
+        run: aws ec2 describe-vpcs
 
       - name: Run deployment script
         env:
