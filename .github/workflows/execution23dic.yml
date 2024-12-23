@@ -1,4 +1,4 @@
-name: GraphWord Deployment with LocalStack
+name: GraphWord Deployment Hybrid (AWS + LocalStack)
 
 on:
   push:
@@ -29,7 +29,7 @@ jobs:
       # 4. Iniciar LocalStack en Docker
       - name: Start LocalStack
         run: |
-          docker run -p 4566:4566 -p 4510-4559:4510-4559 -v /var/run/docker.sock:/var/run/docker.sock localstack/localstack
+          docker run -d --name localstack -p 4566:4566 -p 4510-4559:4510-4559 -v /var/run/docker.sock:/var/run/docker.sock localstack/localstack
 
       # 5. Esperar a que LocalStack esté listo
       - name: Wait for LocalStack to be ready
@@ -39,14 +39,31 @@ jobs:
             echo "Waiting for LocalStack to start..."
             sleep 5
           done
-      - name: Verify LocalStack is running
-        run: curl http://localhost:4566/health
 
-      # 6. Ejecutar el script de despliegue
-      - name: Run deployment script
+      # 6. Verificar los servicios de AWS y LocalStack
+      - name: Verify AWS Services
+        run: |
+          aws ec2 describe-vpcs
+          aws s3 ls
         env:
           AWS_ACCESS_KEY_ID: ASIAUZTGPSLANRECIUZM
           AWS_SECRET_ACCESS_KEY: jpQCsZAqCe7/GRbHatPHoall4SVnEyEkBo642zl0
           AWS_DEFAULT_REGION: us-east-1
+
+      - name: Verify LocalStack Lambdas
+        run: |
+          aws --endpoint-url=http://localhost:4566 lambda list-functions
+        env:
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_DEFAULT_REGION: us-east-1
+
+      # 7. Ejecutar el script de despliegue híbrido
+      - name: Run hybrid deployment script
+        env:
+          AWS_ACCESS_KEY_ID: ASIAUZTGPSLANRECIUZM
+          AWS_SECRET_ACCESS_KEY: jpQCsZAqCe7/GRbHatPHoall4SVnEyEkBo642zl0
+          AWS_DEFAULT_REGION: us-east-1
+          LOCALSTACK_HOSTNAME: http://localhost:4566
         run: |
           python src/deployment.py
