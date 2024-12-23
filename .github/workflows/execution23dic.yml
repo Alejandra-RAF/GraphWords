@@ -1,4 +1,4 @@
-name: GraphWord Deployment Hybrid (AWS + LocalStack)
+name: GraphWord Deployment with LocalStack
 
 on:
   push:
@@ -7,79 +7,54 @@ on:
   workflow_dispatch:
 
 jobs:
-  deployment:
+  setup-environment:
     runs-on: ubuntu-22.04
     steps:
-      # 1. Clonar el código del repositorio
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. Configurar Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      # 3. Instalar dependencias necesarias
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install boto3 jq
-
-      # 4. Iniciar LocalStack en Docker
-      - name: Start LocalStack
+          pip install boto3
+  start-localstack:
+    needs: setup-environment
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Start LocalStack using Docker
         run: |
-          docker run -d --name localstack -p 4566:4566 -p 4510-4559:4510-4559 -v /var/run/docker.sock:/var/run/docker.sock localstack/localstack
-
-      # 5. Esperar a que LocalStack esté listo
-      - name: Wait for LocalStack to be ready
+          docker run -d --name localstack_main -p 4566:4566 -p 4571:4571 localstack/localstack
+      - name: Wait for LocalStack to start
         run: |
-          for i in {1..90}; do
-            RESPONSE=$(curl -s http://localhost:4566/health || echo "error")
-            echo "Response: $RESPONSE"
-            if [[ "$RESPONSE" == "error" ]]; then
-              echo "LocalStack is not responding yet..."
-              sleep 5
-              continue
-            fi
-            STATUS=$(echo $RESPONSE | jq -r '.services.lambda // empty')
-            if [[ "$STATUS" == "running" ]]; then
-              echo "LocalStack is ready."
-              break
-            fi
-            echo "Waiting for LocalStack to be ready..."
+          for i in {1..10}; do
+            curl -s http://localhost:4566/health | grep "\"status\": \"running\"" && break
+            echo "Waiting for LocalStack to start..."
             sleep 5
           done
-
-
-      # 6. Verificar el estado de LocalStack
-      - name: Verify LocalStack Health
+      - name: Verify LocalStack is running
         run: curl http://localhost:4566/health
 
-      # 7. Verificar los servicios de AWS y LocalStack
-      - name: Verify AWS Services
-        run: |
-          aws ec2 describe-vpcs
-          aws s3 ls
-        env:
-          AWS_ACCESS_KEY_ID: ASIAUZTGPSLANRECIUZM
-          AWS_SECRET_ACCESS_KEY: jpQCsZAqCe7/GRbHatPHoall4SVnEyEkBo642zl0
-          AWS_DEFAULT_REGION: us-east-1
+  run-deployment:
+    needs: start-localstack
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Verify LocalStack Lambdas
-        run: |
-          aws --endpoint-url=http://localhost:4566 lambda list-functions
-        env:
-          AWS_ACCESS_KEY_ID: test
-          AWS_SECRET_ACCESS_KEY: test
-          AWS_DEFAULT_REGION: us-east-1
+      - name: Set up Python (again, for context isolation)
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
 
-      # 8. Ejecutar el script de despliegue híbrido
-      - name: Run hybrid deployment script
-        env:
-          AWS_ACCESS_KEY_ID: ASIAUZTGPSLANRECIUZM
-          AWS_SECRET_ACCESS_KEY: jpQCsZAqCe7/GRbHatPHoall4SVnEyEkBo642zl0
-          AWS_DEFAULT_REGION: us-east-1
-          LOCALSTACK_HOSTNAME: http://localhost:4566
+      - name: Install dependencies (again, if needed)
+        run: |
+          python -m pip install --upgrade pip
+          pip install boto3
+      - name: Run deployment script
         run: |
           python src/deployment.py
