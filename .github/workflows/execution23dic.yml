@@ -34,7 +34,7 @@ jobs:
       # 5. Esperar a que LocalStack esté listo
       - name: Wait for LocalStack to be ready
         run: |
-          for i in {1..10}; do
+          for i in {1..30}; do
             curl -s http://localhost:4566/health | grep "\"status\": \"running\"" && break
             echo "Waiting for LocalStack to start..."
             sleep 5
