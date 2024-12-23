@@ -36,6 +36,7 @@ jobs:
           echo "[default]" > ~/.aws/config
           echo "region = $AWS_DEFAULT_REGION" >> ~/.aws/config
 
+
       - name: Run deployment script
         env:
           AWS_DEFAULT_REGION: us-east-1
