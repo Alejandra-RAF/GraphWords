@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install boto3
+          pip install boto3 jq
 
       # 4. Iniciar LocalStack en Docker
       - name: Start LocalStack
@@ -34,13 +34,21 @@ jobs:
       # 5. Esperar a que LocalStack esté listo
       - name: Wait for LocalStack to be ready
         run: |
-          for i in {1..60}; do
-            curl -s http://localhost:4566/health | grep "\"status\": \"running\"" && break
-            echo "Waiting for LocalStack to start..."
+          for i in {1..90}; do
+            STATUS=$(curl -s http://localhost:4566/health | jq -r '.services.lambda')
+            if [ "$STATUS" = "running" ]; then
+              echo "LocalStack is ready."
+              break
+            fi
+            echo "Waiting for LocalStack to be ready..."
             sleep 5
           done
 
-      # 6. Verificar los servicios de AWS y LocalStack
+      # 6. Verificar el estado de LocalStack
+      - name: Verify LocalStack Health
+        run: curl http://localhost:4566/health
+
+      # 7. Verificar los servicios de AWS y LocalStack
       - name: Verify AWS Services
         run: |
           aws ec2 describe-vpcs
@@ -58,7 +66,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: test
           AWS_DEFAULT_REGION: us-east-1
 
-      # 7. Ejecutar el script de despliegue híbrido
+      # 8. Ejecutar el script de despliegue híbrido
       - name: Run hybrid deployment script
         env:
           AWS_ACCESS_KEY_ID: ASIAUZTGPSLANRECIUZM
