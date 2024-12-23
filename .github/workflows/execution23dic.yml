@@ -39,8 +39,10 @@ jobs:
     steps:
       - name: Start LocalStack using Docker
         run: |
-          docker run -d -p 4566:4566 -p 4510-4559:4510-4559 -v /var/run/docker.sock:/var/run/docker.sock localstack/localstack
+          docker run -d --name localstack_main -p 4566:4566 -p 4510-4559:4510-4559 \ -v /var/run/docker.sock:/var/run/docker.sock \ -e SERVICES="s3,lambda,ec2" localstack/localstack
           sleep 10
+      - name: Verify LocalStack services
+        run: curl http://localhost:4566/health
 
   run-deployment:
     needs: start-localstack
