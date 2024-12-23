@@ -29,7 +29,7 @@ jobs:
       # 4. Iniciar LocalStack en Docker
       - name: Start LocalStack
         run: |
-          docker run --rm -it -p 4566:4566 -p 4510-4559:4510-4559 -v /var/run/docker.sock:/var/run/docker.sock localstack/localstack
+          docker run --rm -p 4566:4566 -p 4510-4559:4510-4559 -v /var/run/docker.sock:/var/run/docker.sock localstack/localstack
 
       # 5. Esperar a que LocalStack esté listo
       - name: Wait for LocalStack to be ready
