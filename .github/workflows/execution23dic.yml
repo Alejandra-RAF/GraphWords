@@ -10,45 +10,43 @@ jobs:
   setup-environment:
     runs-on: ubuntu-22.04
     steps:
-      # 1. Checkout el código
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. Configuración de Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      # 3. Instalar dependencias necesarias
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install boto3 localstack
+          pip install boto3
 
   start-localstack:
     needs: setup-environment
     runs-on: ubuntu-22.04
     steps:
-      # 1. Configurar LocalStack
-      - name: Start LocalStack
+      - name: Start LocalStack using Docker
         run: |
-          pip install localstack
-          localstack start -d
-      # 2. Verificar que LocalStack está corriendo
-      - name: Verify LocalStack
+          docker run -d --name localstack_main -p 4566:4566 -p 4571:4571 localstack/localstack
+      - name: Wait for LocalStack to start
         run: |
-          curl http://localhost:4566/health
+          for i in {1..10}; do
+            curl -s http://localhost:4566/health | grep "\"status\": \"running\"" && break
+            echo "Waiting for LocalStack to start..."
+            sleep 5
+          done
+      - name: Verify LocalStack is running
+        run: curl http://localhost:4566/health
 
   run-deployment:
-    needs: [setup-environment, start-localstack]
+    needs: start-localstack
     runs-on: ubuntu-22.04
     steps:
-      # 1. Checkout el código
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. Ejecutar el script de despliegue
       - name: Run deployment script
         run: |
           python src/deployment.py
