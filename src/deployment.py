@@ -260,10 +260,10 @@ def main():
     
     # Scripts `Create_Lamdba_*` para configurar Lambdas locales
     create_scripts = [
-        "lambdas/create_lambda_datalake.py",
-        "lambdas/create_Lambda_datamart.py",
-        "lambdas/create_Lambda_graph.py",
-        "lambdas/create_lambda_api.py"
+        "src/lambdas/create_lambda_datalake.py",
+        "src/lambdas/create_Lambda_datamart.py",
+        "src/lambdas/create_Lambda_graph.py",
+        "src/lambdas/create_lambda_api.py"
     ]
     
     for script in create_scripts:
