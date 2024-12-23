@@ -27,9 +27,9 @@ jobs:
         run: |
           mkdir -p ~/.aws
           echo "[default]" > ~/.aws/credentials
-          echo "aws_access_key_id = ASIAUZTGPSLAJ3WWDED7" >> ~/.aws/credentials
-          echo "aws_secret_access_key = 7fH8Di3HdAOrl13x1lFwNhFlJjsfhku3NWgOeSz4" >> ~/.aws/credentials
-          echo "aws_session_token = IQoJb3JpZ2luX2VjEBcaCXVzLXdlc3QtMiJHMEUCIQCbiFJQKE5EwUEKsCR89X6WoFx1SrtzXm5Udd1zu/r7NgIgJfSWkyDgE1M2YmlV0YKtgJIc4TumoWWgYbGNFAUhKBUqsAII4P//////////ARAAGgwzMjk4NTM2NzAwODAiDHkQyUdOHdUk0seQTCqEAnbQeCEL/QrQb8VWXBGoq1MKMCkaUTRox9zqgDci/WXSFlX+Dia5qcLrE/acpBrluk0qTmfNjUkJhEOS/inuB/P+LW6Pj7yORJ+SGoUthDEj2nYH4cQ1dUefYvJJyzLJ0Gg2Nqj2a8WmITUywx8+zyTAvsUVOy7O64//AqjWeeOyAnen14jLXLEkFoWBk3OvHpawjV8JPCzh/oShS3t9/kil7fW9Ej/z6K1Sg+7mY4WcIcLHEF/gFajNuVvBT2sgHqY7a18LE3aVdLMlxwXg9TwM68vSV2rRfJpHkp+IlBPqQMQEcxN21wgH99lLOFNxK6dcHDuQ9d9lOklBqqyQJLbCEvr7MNPIp7sGOp0B3U0JS8SXeKZp46yVnLGaqyz1D7+ocFB4BgouQzwEKkxWVnhshLr/JlYom3xQtUkwOoKpWoPtcihG/SGsNAkdhsNoOZwqWOOyBjBITFOqbIXfr6uNMoY8zKO44dyibNeea2xmxe/7gpsiYVdBkm1IBlEYBMKQxfa/K075pyJVF5KK5Ko2qu3WxcG2b8FQo/+sAidkpgvA848vRKwgCA==" >> ~/.aws/credentials
+          echo "aws_access_key_id = ASIAQXQZBCCF77URH6L5" >> ~/.aws/credentials
+          echo "aws_secret_access_key = uQTMVuOSpdoYBqo4HKRj+Y87JxB2x+S7Ed3T0DH/" >> ~/.aws/credentials
+          echo "aws_session_token = IQoJb3JpZ2luX2VjEBcaCXVzLXdlc3QtMiJHMEUCIGZZSvGY62ZyTWb8TrFcNcZA8TpiWMacT7ialmWhNQAKAiEA8eX4O3vlsKlTy49fJmA4Ntlrh3IF7foKw+y1C/4XeRcqsAII4P//////////ARABGgwwNTA1MTgzNjQyOTkiDONMrS55QuZBPdDcYSqEAlxe7KLV3ZYgNuP6uRpR0ovEpJDav/gPowsEe4rii4tTolA85eND1p2TrYleaxibyVnm8lHHQ4H7qFJmKkBD4gVRbeJbFrOTO+Se8KshZUSewf49Z4YfiU0v9ln84BoK5o0Fc5J0veAwVMXRchFooq4X/xvhP40KZ5FF542FO5MRFj0SVHfl8ORym2Or/BtuQ5VaVflYhM7B6GHAaVdeQdrsB76FyU48SurNeyDu6TYkc6oRds/27xUYL+8s8MgoEgj5RK6TWfKy2ia3mNhifY4qId/z4EZK5auXzVbOZ6/62cTrJ53CcTsF8aOMNvzkwdjwvpaAFK4nATvBEjMP5ftRFcCnMPDRp7sGOp0BuyGmkDUNIXbK3SAPTKHY7ZgKRg8xUeeA0kjr5HyKEtsNxkofETFkMUvjqbtjAlNZAPxrmt9NgwsDUcAT5nFbA7xt7keWPIic4JyE1o9MlmkLjD7Vi4lgxnJuOuV4WmXUR+oRkW02vG7cx68zs2wmlNe3huN39pwMih7R1rJ3nivQYsOUHb+MDMC/UWUNIUaxRbzDHkdIMZ8pgoAj8w==" >> ~/.aws/credentials
           echo "[default]" > ~/.aws/config
           echo "region = us-east-1" >> ~/.aws/config
 
@@ -73,9 +73,9 @@ jobs:
           
       - name: Run deployment script
         env:
-          AWS_ACCESS_KEY_ID: ASIAUZTGPSLAJ3WWDED7
-          AWS_SECRET_ACCESS_KEY: 7fH8Di3HdAOrl13x1lFwNhFlJjsfhku3NWgOeSz4
-          AWS_SESSION_TOKEN: IQoJb3JpZ2luX2VjEBcaCXVzLXdlc3QtMiJHMEUCIQCbiFJQKE5EwUEKsCR89X6WoFx1SrtzXm5Udd1zu/r7NgIgJfSWkyDgE1M2YmlV0YKtgJIc4TumoWWgYbGNFAUhKBUqsAII4P//////////ARAAGgwzMjk4NTM2NzAwODAiDHkQyUdOHdUk0seQTCqEAnbQeCEL/QrQb8VWXBGoq1MKMCkaUTRox9zqgDci/WXSFlX+Dia5qcLrE/acpBrluk0qTmfNjUkJhEOS/inuB/P+LW6Pj7yORJ+SGoUthDEj2nYH4cQ1dUefYvJJyzLJ0Gg2Nqj2a8WmITUywx8+zyTAvsUVOy7O64//AqjWeeOyAnen14jLXLEkFoWBk3OvHpawjV8JPCzh/oShS3t9/kil7fW9Ej/z6K1Sg+7mY4WcIcLHEF/gFajNuVvBT2sgHqY7a18LE3aVdLMlxwXg9TwM68vSV2rRfJpHkp+IlBPqQMQEcxN21wgH99lLOFNxK6dcHDuQ9d9lOklBqqyQJLbCEvr7MNPIp7sGOp0B3U0JS8SXeKZp46yVnLGaqyz1D7+ocFB4BgouQzwEKkxWVnhshLr/JlYom3xQtUkwOoKpWoPtcihG/SGsNAkdhsNoOZwqWOOyBjBITFOqbIXfr6uNMoY8zKO44dyibNeea2xmxe/7gpsiYVdBkm1IBlEYBMKQxfa/K075pyJVF5KK5Ko2qu3WxcG2b8FQo/+sAidkpgvA848vRKwgCA==
+          AWS_ACCESS_KEY_ID: ASIAQXQZBCCF77URH6L5
+          AWS_SECRET_ACCESS_KEY: uQTMVuOSpdoYBqo4HKRj+Y87JxB2x+S7Ed3T0DH/
+          AWS_SESSION_TOKEN: IQoJb3JpZ2luX2VjEBcaCXVzLXdlc3QtMiJHMEUCIGZZSvGY62ZyTWb8TrFcNcZA8TpiWMacT7ialmWhNQAKAiEA8eX4O3vlsKlTy49fJmA4Ntlrh3IF7foKw+y1C/4XeRcqsAII4P//////////ARABGgwwNTA1MTgzNjQyOTkiDONMrS55QuZBPdDcYSqEAlxe7KLV3ZYgNuP6uRpR0ovEpJDav/gPowsEe4rii4tTolA85eND1p2TrYleaxibyVnm8lHHQ4H7qFJmKkBD4gVRbeJbFrOTO+Se8KshZUSewf49Z4YfiU0v9ln84BoK5o0Fc5J0veAwVMXRchFooq4X/xvhP40KZ5FF542FO5MRFj0SVHfl8ORym2Or/BtuQ5VaVflYhM7B6GHAaVdeQdrsB76FyU48SurNeyDu6TYkc6oRds/27xUYL+8s8MgoEgj5RK6TWfKy2ia3mNhifY4qId/z4EZK5auXzVbOZ6/62cTrJ53CcTsF8aOMNvzkwdjwvpaAFK4nATvBEjMP5ftRFcCnMPDRp7sGOp0BuyGmkDUNIXbK3SAPTKHY7ZgKRg8xUeeA0kjr5HyKEtsNxkofETFkMUvjqbtjAlNZAPxrmt9NgwsDUcAT5nFbA7xt7keWPIic4JyE1o9MlmkLjD7Vi4lgxnJuOuV4WmXUR+oRkW02vG7cx68zs2wmlNe3huN39pwMih7R1rJ3nivQYsOUHb+MDMC/UWUNIUaxRbzDHkdIMZ8pgoAj8w==
           LOCALSTACK_HOSTNAME: http://localhost:4566
           AWS_DEFAULT_REGION: us-east-1
         run: |
