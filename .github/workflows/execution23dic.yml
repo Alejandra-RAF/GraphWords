@@ -27,9 +27,9 @@ jobs:
         run: |
           mkdir -p ~/.aws
           echo "[default]" > ~/.aws/credentials
-          echo "aws_access_key_id = ASIAUZTGPSLABVS322WM" >> ~/.aws/credentials
-          echo "aws_secret_access_key = YP8F+sFtAxOqf/RcA+xZVJyeBh+ksiUQW+eeBnS/" >> ~/.aws/credentials
-          echo "aws_session_token = IQoJb3JpZ2luX2VjEBcaCXVzLXdlc3QtMiJIMEYCIQDO28KriJ6lUTnpC1ags8qKRiqCY+igcv/7tbyy5zOn0QIhAPTzTfjAJvRyVTl6eiXcAM1vfAGO9/DcamBf2Y4cjKu+KrACCOD//////////wEQABoMMzI5ODUzNjcwMDgwIgzg8fKu37OQ7NJjRf0qhALh5xmpKkBTn56/7w4xkrfXHvXo/7dBtvtEoMT/wuJ3WSCtCqMu5nApgb1H11wyT7rWFmPFD4QCw7WriZr2Rj2nCLGCN29r/eqTiEIxeHXCUflCGnLflr7pqbkT2o4zT5yu721umIZ9TCtcQ9mArVJloeAdDMZKko91h/tqoiw1WXXM3hChSDcP6IFntvUbnR37dHrisWvfgLjRHKjz/hLFPkM4A1tXgJgHzmAOWZW4+6Eb+0WbfKT7gYRzUDmZj27vw26e6M5WkUWzYBSVgK6tZFzzeKs+zj0WeQcHWhuddCjBuS1SRE/dfjJ34gGF4U/DSNCGmdMM3VbkeekCYTkwkOfQcTDN26e7BjqcAdDGuwe6QGgupSLkt6+WtCvF5kI92J4Xd78+XzMtD/72vc4cmLbAClTttRpkAGJME4Dr/7X4dsv1bDgoZj3KIdm3aCg0uCzHpaggqSSZDFzAVe8i1aTG/otMW9mKFXl0o0gi678Zi21xwA5urSvacRLmlusvRpwVgxuB0Nauhn9KebX8bG15gBLLuwfo/K8biC/wOA2ib+NEceCRgg==" >> ~/.aws/credentials
+          echo "aws_access_key_id = ASIAQXQZBCCF6GJOA2HF" >> ~/.aws/credentials
+          echo "aws_secret_access_key = GMn3qgAq/0MFe6jz458HtOJ6WkyLsO9WQCnrByWX" >> ~/.aws/credentials
+          echo "aws_session_token = IQoJb3JpZ2luX2VjEBgaCXVzLXdlc3QtMiJIMEYCIQCWB70wGHcYczCkFszNtEdCJKCBRDfLzS8Hm6q6PGeX5QIhAIVOJhVPTcYrm7QBH9rF2GrlajswsxVdyrgC2hbtDLiaKrACCOD//////////wEQARoMMDUwNTE4MzY0Mjk5Igwsnf6lw8daGdoQbyEqhAJRUuJZ1Ryct8ehwEJ/Cc4013fKYxdowARoviJbCayd6wn9OfiM6RBnoRAp4ZOH33uemN/yG5ZafAURCnLu2V6UD8hhUmzFY0tfoiT8/l+1KVmBWSsICueS6hiz8u+iJh+Ys2pHQdFUqBHLKiBd/OytB3kgqD3Naxf5FoN9iV6LEN941HdqRRVazQ1kiscbjm3hsMyWduQ4vSTDNnzwqVfHSK3GW5tLi3tHNLQfY23b4T/NAAPyWwewdq1gkv8lzMlAbPXYCmd0xreRDeI/kGK+Fjj/KpVxVlLpMfbfD3OKZxpwooOWvKfV3ROKCwxNfD78YsjbCZKsllt4kZCKaapk4MqYTjCG4ae7BjqcAU5QHP1wdRtY46o+LsPNjWgx61i/BpHyaNkf/7soGg61EhnC3EeX8kuHIRTSJa+cjjiwR5UKJu3aJ5SNHhae4OSWODzDExwwqNqgYgTOGLVae/aiVL+we85ZkIyT3eAqNCms477/CHGkoVAVeWgw6uVUnWojGP2+rd/h+uSwkC3J7hcO9ScUKpN+1iDDQRy0HD7xhvpJ0WzUNtScqQ==" >> ~/.aws/credentials
           echo "[default]" > ~/.aws/config
           echo "region = us-east-1" >> ~/.aws/config
 
@@ -39,7 +39,7 @@ jobs:
     steps:
       - name: Start LocalStack using Docker
         run: |
-          docker run -d --name localstack_main -p 4566:4566 -p 4510-4559:4510-4559 -v /var/run/docker.sock:/var/run/docker.sock -e SERVICES="s3,lambda,ec2" localstack/localstack
+          docker run -d --name localstack_main -p 4566:4566 -p 4571:4571 localstack/localstack
           sleep 10
           
       - name: Check LocalStack container
@@ -73,9 +73,9 @@ jobs:
           
       - name: Run deployment script
         env:
-          AWS_ACCESS_KEY_ID: ASIAUZTGPSLABVS322WM
-          AWS_SECRET_ACCESS_KEY: YP8F+sFtAxOqf/RcA+xZVJyeBh+ksiUQW+eeBnS/
-          AWS_SESSION_TOKEN: IQoJb3JpZ2luX2VjEBcaCXVzLXdlc3QtMiJIMEYCIQDO28KriJ6lUTnpC1ags8qKRiqCY+igcv/7tbyy5zOn0QIhAPTzTfjAJvRyVTl6eiXcAM1vfAGO9/DcamBf2Y4cjKu+KrACCOD//////////wEQABoMMzI5ODUzNjcwMDgwIgzg8fKu37OQ7NJjRf0qhALh5xmpKkBTn56/7w4xkrfXHvXo/7dBtvtEoMT/wuJ3WSCtCqMu5nApgb1H11wyT7rWFmPFD4QCw7WriZr2Rj2nCLGCN29r/eqTiEIxeHXCUflCGnLflr7pqbkT2o4zT5yu721umIZ9TCtcQ9mArVJloeAdDMZKko91h/tqoiw1WXXM3hChSDcP6IFntvUbnR37dHrisWvfgLjRHKjz/hLFPkM4A1tXgJgHzmAOWZW4+6Eb+0WbfKT7gYRzUDmZj27vw26e6M5WkUWzYBSVgK6tZFzzeKs+zj0WeQcHWhuddCjBuS1SRE/dfjJ34gGF4U/DSNCGmdMM3VbkeekCYTkwkOfQcTDN26e7BjqcAdDGuwe6QGgupSLkt6+WtCvF5kI92J4Xd78+XzMtD/72vc4cmLbAClTttRpkAGJME4Dr/7X4dsv1bDgoZj3KIdm3aCg0uCzHpaggqSSZDFzAVe8i1aTG/otMW9mKFXl0o0gi678Zi21xwA5urSvacRLmlusvRpwVgxuB0Nauhn9KebX8bG15gBLLuwfo/K8biC/wOA2ib+NEceCRgg==
+          AWS_ACCESS_KEY_ID: ASIAQXQZBCCF6GJOA2HF
+          AWS_SECRET_ACCESS_KEY: GMn3qgAq/0MFe6jz458HtOJ6WkyLsO9WQCnrByWX
+          AWS_SESSION_TOKEN: IQoJb3JpZ2luX2VjEBgaCXVzLXdlc3QtMiJIMEYCIQCWB70wGHcYczCkFszNtEdCJKCBRDfLzS8Hm6q6PGeX5QIhAIVOJhVPTcYrm7QBH9rF2GrlajswsxVdyrgC2hbtDLiaKrACCOD//////////wEQARoMMDUwNTE4MzY0Mjk5Igwsnf6lw8daGdoQbyEqhAJRUuJZ1Ryct8ehwEJ/Cc4013fKYxdowARoviJbCayd6wn9OfiM6RBnoRAp4ZOH33uemN/yG5ZafAURCnLu2V6UD8hhUmzFY0tfoiT8/l+1KVmBWSsICueS6hiz8u+iJh+Ys2pHQdFUqBHLKiBd/OytB3kgqD3Naxf5FoN9iV6LEN941HdqRRVazQ1kiscbjm3hsMyWduQ4vSTDNnzwqVfHSK3GW5tLi3tHNLQfY23b4T/NAAPyWwewdq1gkv8lzMlAbPXYCmd0xreRDeI/kGK+Fjj/KpVxVlLpMfbfD3OKZxpwooOWvKfV3ROKCwxNfD78YsjbCZKsllt4kZCKaapk4MqYTjCG4ae7BjqcAU5QHP1wdRtY46o+LsPNjWgx61i/BpHyaNkf/7soGg61EhnC3EeX8kuHIRTSJa+cjjiwR5UKJu3aJ5SNHhae4OSWODzDExwwqNqgYgTOGLVae/aiVL+we85ZkIyT3eAqNCms477/CHGkoVAVeWgw6uVUnWojGP2+rd/h+uSwkC3J7hcO9ScUKpN+1iDDQRy0HD7xhvpJ0WzUNtScqQ==
           AWS_DEFAULT_REGION: us-east-1
         run: |
           python src/deployment.py
