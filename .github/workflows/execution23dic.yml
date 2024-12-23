@@ -37,10 +37,14 @@ jobs:
     needs: setup-environment
     runs-on: ubuntu-22.04
     steps:
+      - name: Check Docker version
+        run: docker --version
+
       - name: Start LocalStack using Docker
         run: |
-          docker run -d --name localstack_main -p 4566:4566 -p 4510-4559:4510-4559 \ -v /var/run/docker.sock:/var/run/docker.sock \ -e SERVICES="s3,lambda,ec2" localstack/localstack
+          docker run -d --name localstack_main -p 4566:4566 -p 4510-4559:4510-4559 -v /var/run/docker.sock:/var/run/docker.sock -e SERVICES="s3,lambda,ec2" localstack/localstack
           sleep 10
+
       - name: Verify LocalStack services
         run: curl http://localhost:4566/health
 
