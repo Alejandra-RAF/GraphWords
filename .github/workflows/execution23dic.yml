@@ -26,17 +26,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install boto3
 
-      # 4. Iniciar LocalStack con el comando personalizado
+      # 4. Iniciar LocalStack
       - name: Start LocalStack
         run: |
-          docker run --rm -it -p 4566:4566 -p 4510-4559:4510-4559 -v /var/run/docker.sock:/var/run/docker.sock localstack/localstack &
+          docker run -d --name localstack -p 4566:4566 -p 4510-4559:4510-4559 -v /var/run/docker.sock:/var/run/docker.sock localstack/localstack
 
       # 5. Esperar a que LocalStack esté listo
       - name: Wait for LocalStack to be ready
         run: |
           for i in {1..90}; do
-            STATUS=$(curl -s http://localhost:4566/health | jq -r '.services.lambda // empty')
-            if [[ "$STATUS" == "running" ]]; then
+            RESPONSE=$(curl -s http://localhost:4566/health || echo "error")
+            if [[ "$RESPONSE" == *"running"* ]]; then
               echo "LocalStack is ready."
               break
             fi
@@ -44,7 +44,11 @@ jobs:
             sleep 5
           done
 
-      # 6. Verificar conectividad con AWS real
+      # 6. Verificar los logs de LocalStack
+      - name: Check LocalStack Logs
+        run: docker logs localstack
+
+      # 7. Verificar conectividad con AWS real
       - name: Verify AWS connectivity
         run: |
           aws ec2 describe-vpcs
@@ -53,22 +57,3 @@ jobs:
           AWS_ACCESS_KEY_ID: ASIAUZTGPSLANRECIUZM
           AWS_SECRET_ACCESS_KEY: jpQCsZAqCe7/GRbHatPHoall4SVnEyEkBo642zl0
           AWS_SESSION_TOKEN: IQoJb3JpZ2luX2VjEBQaCXVzLXdlc3QtMiJIMEYCIQDmS2eEO9fN+z/S2kfiOSu0VZU+nFwaZ9YYnpPpR7zgbQIhALzxs+pY+JA5b8/U1Wz+0iYzBAakjiLY5/963/E25euHKrACCN3//////////wEQABoMMzI5ODUzNjcwMDgwIgwiO80u2jQuF2SV+2oqhAKPb9Nxtsgjqs0zl7F0fn/PKXNUZLVDf5LL3VA39CaXqpbrR2pljsXfsjrV9Bs8naV7F1wEHJYN+dfERkpxX8qF0KppMASXeuIZKhzOp4N1Bk06wsjk6Z9cS7MjCcze4BIrn6rBqh7R4eHnbf0FLknRDMuDsLK328euyVdyVQChCoDAeAGVuLV4vTSIO6LU5/oyv5/Hel5wJkQ1rFVN3jZPDWnj/G8V3pIv3WZW0iD9EAdLbwi68MZHwTYfvpLdOfW16s+jJPwiTA3r4QcARvu7qugavvU4W5q6Mo+6XHPeQ9KndR8+inz8+OQ6Rr3Hw1tjJOfYEbKLqFSn/8iI6AntU4iizzDJ86a7BjqcAdfr7TE2s/qEBOB9aa6AHDQ+9NOCie27fUslRXoCeDyEpHcYvu+HX/AP0AYe8vlyR2sgi6NE35wjUda6XfN4cIxfWTT8Kt9Tt9tW5Ro+UR+Ifz6qh0cS8kNS3Aj8ah9IcE3fECr70R/lzfmF2f+O8uQlfvv1kE8ZOAUANdc5k3tfIU7P1QnQoIkuQx6xka/80eF7QGjjXLCgrLie3g==
-
-      # 7. Verificar conectividad con LocalStack
-      - name: Verify LocalStack connectivity
-        run: |
-          aws --endpoint-url=http://localhost:4566 lambda list-functions
-        env:
-          AWS_ACCESS_KEY_ID: test
-          AWS_SECRET_ACCESS_KEY: test
-          AWS_DEFAULT_REGION: us-east-1
-
-      # 8. Ejecutar el script de despliegue híbrido
-      - name: Run hybrid deployment script
-        env:
-          AWS_ACCESS_KEY_ID: ASIAUZTGPSLANRECIUZM
-          AWS_SECRET_ACCESS_KEY: jpQCsZAqCe7/GRbHatPHoall4SVnEyEkBo642zl0
-          AWS_SESSION_TOKEN: IQoJb3JpZ2luX2VjEBQaCXVzLXdlc3QtMiJIMEYCIQDmS2eEO9fN+z/S2kfiOSu0VZU+nFwaZ9YYnpPpR7zgbQIhALzxs+pY+JA5b8/U1Wz+0iYzBAakjiLY5/963/E25euHKrACCN3//////////wEQABoMMzI5ODUzNjcwMDgwIgwiO80u2jQuF2SV+2oqhAKPb9Nxtsgjqs0zl7F0fn/PKXNUZLVDf5LL3VA39CaXqpbrR2pljsXfsjrV9Bs8naV7F1wEHJYN+dfERkpxX8qF0KppMASXeuIZKhzOp4N1Bk06wsjk6Z9cS7MjCcze4BIrn6rBqh7R4eHnbf0FLknRDMuDsLK328euyVdyVQChCoDAeAGVuLV4vTSIO6LU5/oyv5/Hel5wJkQ1rFVN3jZPDWnj/G8V3pIv3WZW0iD9EAdLbwi68MZHwTYfvpLdOfW16s+jJPwiTA3r4QcARvu7qugavvU4W5q6Mo+6XHPeQ9KndR8+inz8+OQ6Rr3Hw1tjJOfYEbKLqFSn/8iI6AntU4iizzDJ86a7BjqcAdfr7TE2s/qEBOB9aa6AHDQ+9NOCie27fUslRXoCeDyEpHcYvu+HX/AP0AYe8vlyR2sgi6NE35wjUda6XfN4cIxfWTT8Kt9Tt9tW5Ro+UR+Ifz6qh0cS8kNS3Aj8ah9IcE3fECr70R/lzfmF2f+O8uQlfvv1kE8ZOAUANdc5k3tfIU7P1QnQoIkuQx6xka/80eF7QGjjXLCgrLie3g==
-          LOCALSTACK_HOSTNAME: http://localhost:4566
-        run: |
-          python src/deployment.py
