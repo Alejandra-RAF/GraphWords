@@ -1,4 +1,4 @@
-name: GraphWord Deployment
+name: GraphWord Deployment with LocalStack
 
 on:
   push:
@@ -10,40 +10,43 @@ jobs:
   deployment:
     runs-on: ubuntu-22.04
     steps:
+      # 1. Clonar el código del repositorio
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 2. Configurar Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
+      # 3. Instalar dependencias necesarias
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install boto3
 
-      - name: Configure AWS Credentials
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
+      # 4. Iniciar LocalStack en Docker
+      - name: Start LocalStack
         run: |
-          mkdir -p ~/.aws
-          echo "[default]" > ~/.aws/credentials
-          echo "aws_access_key_id = $AWS_ACCESS_KEY_ID" >> ~/.aws/credentials
-          echo "aws_secret_access_key = $AWS_SECRET_ACCESS_KEY" >> ~/.aws/credentials
-          echo "[default]" > ~/.aws/config
-          echo "region = $AWS_DEFAULT_REGION" >> ~/.aws/config
+          docker run --rm -it -p 4566:4566 -p 4510-4559:4510-4559 -v /var/run/docker.sock:/var/run/docker.sock localstack/localstack
 
-      - name: Test AWS CLI
+      # 5. Esperar a que LocalStack esté listo
+      - name: Wait for LocalStack to be ready
         run: |
-          echo "Testing AWS CLI with credentials..."
-          aws sts get-caller-identity
-          aws ec2 describe-vpcs
+          for i in {1..10}; do
+            curl -s http://localhost:4566/health | grep "\"status\": \"running\"" && break
+            echo "Waiting for LocalStack to start..."
+            sleep 5
+          done
+      - name: Verify LocalStack is running
+        run: curl http://localhost:4566/health
 
+      # 6. Ejecutar el script de despliegue
       - name: Run deployment script
         env:
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
           AWS_DEFAULT_REGION: us-east-1
         run: |
           python src/deployment.py
