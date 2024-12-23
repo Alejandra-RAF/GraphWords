@@ -4,9 +4,7 @@ Este repositorio ejecuta pruebas automáticas usando GitHub Actions.
 
 ```mermaid
 graph TD
-    A[Inicio: Push en main] --> B[GitHub Actions]
-    B --> C[Checkout del código]
-    C --> D[Configuración de Node.js]
-    D --> E[Instalación de dependencias]
-    E --> F[Ejecutar pruebas]
-    F --> G[Fin]
+    A[Push to Main Branch or Manual Trigger] --> B[Setup Environment]
+    B -->|Install Dependencies| C[Run Deployment Script]
+    C -->|Successful Execution| D[End Workflow]
+    C -->|Failure| E[Notify Failure]
