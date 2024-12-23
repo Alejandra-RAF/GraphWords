@@ -41,7 +41,19 @@ jobs:
         run: |
           docker run -d --name localstack_main -p 4566:4566 -p 4510-4559:4510-4559 -v /var/run/docker.sock:/var/run/docker.sock -e SERVICES="s3,lambda,ec2" localstack/localstack
           sleep 10
-
+          
+      - name: Check LocalStack container
+        run: |
+          for i in {1..60}; do
+            RUNNING=$(docker inspect -f '{{.State.Running}}' localstack_main || echo "false")
+            if [ "$RUNNING" == "true" ]; then
+              echo "LocalStack container is running."
+              break
+            fi
+            echo "Waiting for LocalStack container to start..."
+            sleep 5
+          done
+    
   run-deployment:
     needs: start-localstack
     runs-on: ubuntu-22.04
@@ -67,5 +79,4 @@ jobs:
           LOCALSTACK_HOSTNAME: http://localhost:4566
           AWS_DEFAULT_REGION: us-east-1
         run: |
-          cd src
           python deployment.py
