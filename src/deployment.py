@@ -4,17 +4,19 @@ import os
 import time
 import json
 
-# Configurar la región desde la variable de entorno o usar un valor predeterminado
+# Configura credenciales explícitas
+aws_access_key = os.getenv("AWS_ACCESS_KEY_ID", "dummy")
+aws_secret_key = os.getenv("AWS_SECRET_ACCESS_KEY", "dummy")
 region_name = os.getenv("AWS_DEFAULT_REGION", "us-east-1")
 localstack_url = os.getenv("LOCALSTACK_URL", "http://localhost:4566")
 
 # Crear clientes para AWS y LocalStack
-ec2_client = boto3.client("ec2", region_name=region_name)
-elb_client = boto3.client("elbv2", region_name=region_name)
-autoscaling_client = boto3.client("autoscaling", region_name=region_name)
-s3 = boto3.client("s3", region_name=region_name, endpoint_url=localstack_url)
-lambda_client = boto3.client("lambda", region_name=region_name, endpoint_url=localstack_url)
-apigateway_client = boto3.client("apigateway", region_name=region_name)
+ec2_client = boto3.client("ec2", region_name=region_name, aws_access_key_id=aws_access_key, aws_secret_access_key=aws_secret_key)
+elb_client = boto3.client("elbv2", region_name=region_name, aws_access_key_id=aws_access_key, aws_secret_access_key=aws_secret_key)
+autoscaling_client = boto3.client("autoscaling", region_name=region_name, aws_access_key_id=aws_access_key, aws_secret_access_key=aws_secret_key)
+s3_client = boto3.client("s3", region_name=region_name, endpoint_url=localstack_url, aws_access_key_id=aws_access_key, aws_secret_access_key=aws_secret_key)
+lambda_client = boto3.client("lambda", region_name=region_name, endpoint_url=localstack_url, aws_access_key_id=aws_access_key, aws_secret_access_key=aws_secret_key)
+apigateway_client = boto3.client("apigateway", region_name=region_name, aws_access_key_id=aws_access_key, aws_secret_access_key=aws_secret_key)
 
 # Crear VPC
 def create_vpc():
