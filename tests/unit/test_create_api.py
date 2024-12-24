@@ -1,12 +1,11 @@
-# tests/unit/test_create_api.py
 import unittest
 from src.utility_scripts.create_api import app
 
 class TestCreateAPI(unittest.TestCase):
-    def test_home_route(self):
-        """Testea si la API responde correctamente en el endpoint principal"""
+    def test_root_endpoint(self):
+        """Prueba que el endpoint raíz devuelva el código 200"""
         tester = app.test_client()
-        response = tester.get('/')
+        response = tester.get("/")
         self.assertEqual(response.status_code, 200)
 
 if __name__ == "__main__":
