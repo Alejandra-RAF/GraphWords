@@ -10,27 +10,22 @@ jobs:
   deploy:
     runs-on: ubuntu-22.04
     steps:
-      # 1. Checkout del código
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # 2. Configurar Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
 
-      # 3. Crear red Docker compartida
       - name: Create Docker network
         run: |
           docker network create localstack-network
 
-      # 4. Iniciar LocalStack en la red Docker
       - name: Start LocalStack
         run: |
           docker run -d --name localstack_main --network localstack-network -p 4566:4566 -p 4510-4559:4510-4559 localstack/localstack
 
-      # 5. Esperar a que LocalStack esté listo
       - name: Wait for LocalStack
         run: |
           timeout=120
@@ -45,14 +40,16 @@ jobs:
             fi
           done
 
-      # 6. Ejecutar el script `deployment.py` dentro de la misma red
+      - name: Debug Environment Variables
+        run: |
+          docker run --network localstack-network -v ${{ github.workspace }}:/app -w /app python:3.9 bash -c "printenv"
+
       - name: Run deployment script
         env:
           AWS_ACCESS_KEY_ID: dummy
           AWS_SECRET_ACCESS_KEY: dummy
           AWS_SESSION_TOKEN: dummy
-          AWS_DEFAULT_REGION: us-east-1
-          LOCALSTACK_URL: http://localstack_main:4566  # Cambiar localhost por el nombre del contenedor
-          
+          AWS_DEFAULT_REGION: us-east-1  # Región definida aquí
+          LOCALSTACK_URL: http://localstack_main:4566
         run: |
           docker run --network localstack-network -v ${{ github.workspace }}:/app -w /app python:3.9 bash -c "pip install -r requirements.txt && python src/deployment.py"
