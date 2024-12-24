@@ -51,6 +51,8 @@ jobs:
           AWS_ACCESS_KEY_ID: dummy
           AWS_SECRET_ACCESS_KEY: dummy
           AWS_SESSION_TOKEN: dummy
+          AWS_DEFAULT_REGION: us-east-1
           LOCALSTACK_URL: http://localstack_main:4566  # Cambiar localhost por el nombre del contenedor
+          
         run: |
           docker run --network localstack-network -v ${{ github.workspace }}:/app -w /app python:3.9 bash -c "pip install -r requirements.txt && python src/deployment.py"
