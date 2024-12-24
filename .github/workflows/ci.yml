@@ -7,60 +7,50 @@ on:
   workflow_dispatch:
 
 jobs:
-  setup-environment:
+  deploy:
     runs-on: ubuntu-22.04
     steps:
+      # 1. Checkout del código
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 2. Configurar Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
 
-      - name: Install dependencies
+      # 3. Crear red Docker compartida
+      - name: Create Docker network
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          docker network create localstack-network
 
-  start-localstack:
-    needs: setup-environment
-    runs-on: ubuntu-22.04
-    steps:
+      # 4. Iniciar LocalStack en la red Docker
       - name: Start LocalStack
         run: |
-          docker run -d --name localstack_main -p 4566:4566 -p 4510-4559:4510-4559 -v /var/run/docker.sock:/var/run/docker.sock localstack/localstack
+          docker run -d --name localstack_main --network localstack-network -p 4566:4566 -p 4510-4559:4510-4559 localstack/localstack
 
+      # 5. Esperar a que LocalStack esté listo
       - name: Wait for LocalStack
         run: |
+          timeout=120
           until curl -s http://localhost:4566/_localstack/init | grep -q '"READY": true'; do
             echo "Waiting for LocalStack to be ready..."
             sleep 2
+            timeout=$((timeout - 2))
+            if [ $timeout -le 0 ]; then
+              echo "Error: LocalStack no se inicializó a tiempo."
+              docker logs localstack_main
+              exit 1
+            fi
           done
 
-  run-deployment:
-    needs: [setup-environment, start-localstack]
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.9"
-          
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Deploy to AWS + LocalStack
+      # 6. Ejecutar el script `deployment.py` dentro de la misma red
+      - name: Run deployment script
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-          AWS_DEFAULT_REGION: us-east-1
-          LOCALSTACK_URL: http://localhost:4566
+          AWS_ACCESS_KEY_ID: dummy
+          AWS_SECRET_ACCESS_KEY: dummy
+          AWS_SESSION_TOKEN: dummy
+          LOCALSTACK_URL: http://localstack_main:4566  # Cambiar localhost por el nombre del contenedor
         run: |
-          python src/deployment.py
+          docker run --network localstack-network -v ${{ github.workspace }}:/app -w /app python:3.9 bash -c "pip install -r requirements.txt && python src/deployment.py"
