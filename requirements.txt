@@ -1,0 +1,6 @@
+boto3==1.26.60
+Flask==2.2.5
+pytest==7.4.0
+unittest-xml-reporting==3.0.4
+flake8==6.0.0
+requests==2.31.0
