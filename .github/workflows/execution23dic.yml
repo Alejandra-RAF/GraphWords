@@ -27,9 +27,9 @@ jobs:
         run: |
           mkdir -p ~/.aws
           echo "[default]" > ~/.aws/credentials
-          echo "aws_access_key_id = ASIAQXQZBCCF6GJOA2HF" >> ~/.aws/credentials
-          echo "aws_secret_access_key = GMn3qgAq/0MFe6jz458HtOJ6WkyLsO9WQCnrByWX" >> ~/.aws/credentials
-          echo "aws_session_token = IQoJb3JpZ2luX2VjEBgaCXVzLXdlc3QtMiJIMEYCIQCWB70wGHcYczCkFszNtEdCJKCBRDfLzS8Hm6q6PGeX5QIhAIVOJhVPTcYrm7QBH9rF2GrlajswsxVdyrgC2hbtDLiaKrACCOD//////////wEQARoMMDUwNTE4MzY0Mjk5Igwsnf6lw8daGdoQbyEqhAJRUuJZ1Ryct8ehwEJ/Cc4013fKYxdowARoviJbCayd6wn9OfiM6RBnoRAp4ZOH33uemN/yG5ZafAURCnLu2V6UD8hhUmzFY0tfoiT8/l+1KVmBWSsICueS6hiz8u+iJh+Ys2pHQdFUqBHLKiBd/OytB3kgqD3Naxf5FoN9iV6LEN941HdqRRVazQ1kiscbjm3hsMyWduQ4vSTDNnzwqVfHSK3GW5tLi3tHNLQfY23b4T/NAAPyWwewdq1gkv8lzMlAbPXYCmd0xreRDeI/kGK+Fjj/KpVxVlLpMfbfD3OKZxpwooOWvKfV3ROKCwxNfD78YsjbCZKsllt4kZCKaapk4MqYTjCG4ae7BjqcAU5QHP1wdRtY46o+LsPNjWgx61i/BpHyaNkf/7soGg61EhnC3EeX8kuHIRTSJa+cjjiwR5UKJu3aJ5SNHhae4OSWODzDExwwqNqgYgTOGLVae/aiVL+we85ZkIyT3eAqNCms477/CHGkoVAVeWgw6uVUnWojGP2+rd/h+uSwkC3J7hcO9ScUKpN+1iDDQRy0HD7xhvpJ0WzUNtScqQ==" >> ~/.aws/credentials
+          echo "aws_access_key_id = ASIAUZTGPSLAIU4BMUP7" >> ~/.aws/credentials
+          echo "aws_secret_access_key = ueUDYY2k39wcaUrDKmbdr9g7f8ACrPMw2BX3N7EI" >> ~/.aws/credentials
+          echo "aws_session_token = IQoJb3JpZ2luX2VjEBgaCXVzLXdlc3QtMiJHMEUCIBHYvN5SUS/oCnGSt89Bj6v9siOlxnavnwqVWh3ETWrwAiEAnpDJHZMHgNmA8Bgqr6VdjwDgoFDLswL+JtIRqdMVM8oqsAII4f//////////ARAAGgwzMjk4NTM2NzAwODAiDGsKjFZpviPrDOehHyqEAm+Xt4Kf88v0KY3a+uQawu66qnyOeiZwEcKUR8jV4RqotuH7NfRZJJQuQZZMq+DA7GHKnz1tex1SMfAVX2bjguq5CbR3RYAwbN4QLP+XS9HREfJdjyLrEqH917PeYPbZQOZMVaPUuHWhqTihueXWndBqUvtrFP5eCnJUXfwhyb1MXGjSgjgwpxmvHOqNfzH5wuNuaI9FFE86K2LrKeqYjNYhYAAFx5kMuPvPImpMq6B9I+Vdww+dpshHBPrd6/1qFKKmoUeEF8tyv08mYE3RMbF9Sh5Zlq3reNAMZBwmjCL5ZQlYdvMFIFqtn4gnD4GMtylb86WzCxoZlNsDViPGdsEfWtVPMMfxp7sGOp0B2T9W/5HVmdhu2sVrPsW7IzqQEpnU0qvYYAXikeV84bZ44JHysIRGkDgEKSVEFCmdQ9fn4MgX/j9E9N3f0p5UciszM83kI6nvVh/ssG698K51n2ENSA4hQb6xfrfzm9JFp+YXIMipQdABchDpzVJBrq7NjNLrZIpDrQlI2bMNQh62WutLAsRwabDZGIZOs6W4xwQxPIQuvH+ZUV+U2w==" >> ~/.aws/credentials
           echo "[default]" > ~/.aws/config
           echo "region = us-east-1" >> ~/.aws/config
 
@@ -39,20 +39,29 @@ jobs:
     steps:
       - name: Start LocalStack using Docker
         run: |
-          docker run -d --name localstack_main -p 4566:4566 -p 4571:4571 localstack/localstack
-          sleep 10
+          docker run -d --name localstack_main -p 4566:4566 -p 4510-4559:4510-4559 -v /var/run/docker.sock:/var/run/docker.sock localstack/localstack
           
-      - name: Check LocalStack container
+      - name: Wait for LocalStack to be ready
         run: |
-          for i in {1..60}; do
-            RUNNING=$(docker inspect -f '{{.State.Running}}' localstack_main || echo "false")
-            if [ "$RUNNING" == "true" ]; then
-              echo "LocalStack container is running."
-              break
-            fi
-            echo "Waiting for LocalStack container to start..."
-            sleep 5
+          until curl -s http://localhost:4566/_localstack/init | grep -q '"READY": true'; do
+            echo "Waiting for LocalStack to be ready..."
+            sleep 2
           done
+
+      - name: Check open ports in LocalStack container
+        run: docker exec localstack_main netstat -tuln
+
+      - name: Test connectivity inside LocalStack container
+        run: docker exec localstack_main curl http://localhost:4566/_localstack/init
+
+
+      - name: Test connectivity from GitHub Actions host
+        run: curl http://localhost:4566/_localstack/init
+
+      - name: View LocalStack logs
+        run: docker logs localstack_main
+
+
     
   run-deployment:
     needs: start-localstack
@@ -73,9 +82,9 @@ jobs:
           
       - name: Run deployment script
         env:
-          AWS_ACCESS_KEY_ID: ASIAQXQZBCCF6GJOA2HF
-          AWS_SECRET_ACCESS_KEY: GMn3qgAq/0MFe6jz458HtOJ6WkyLsO9WQCnrByWX
-          AWS_SESSION_TOKEN: IQoJb3JpZ2luX2VjEBgaCXVzLXdlc3QtMiJIMEYCIQCWB70wGHcYczCkFszNtEdCJKCBRDfLzS8Hm6q6PGeX5QIhAIVOJhVPTcYrm7QBH9rF2GrlajswsxVdyrgC2hbtDLiaKrACCOD//////////wEQARoMMDUwNTE4MzY0Mjk5Igwsnf6lw8daGdoQbyEqhAJRUuJZ1Ryct8ehwEJ/Cc4013fKYxdowARoviJbCayd6wn9OfiM6RBnoRAp4ZOH33uemN/yG5ZafAURCnLu2V6UD8hhUmzFY0tfoiT8/l+1KVmBWSsICueS6hiz8u+iJh+Ys2pHQdFUqBHLKiBd/OytB3kgqD3Naxf5FoN9iV6LEN941HdqRRVazQ1kiscbjm3hsMyWduQ4vSTDNnzwqVfHSK3GW5tLi3tHNLQfY23b4T/NAAPyWwewdq1gkv8lzMlAbPXYCmd0xreRDeI/kGK+Fjj/KpVxVlLpMfbfD3OKZxpwooOWvKfV3ROKCwxNfD78YsjbCZKsllt4kZCKaapk4MqYTjCG4ae7BjqcAU5QHP1wdRtY46o+LsPNjWgx61i/BpHyaNkf/7soGg61EhnC3EeX8kuHIRTSJa+cjjiwR5UKJu3aJ5SNHhae4OSWODzDExwwqNqgYgTOGLVae/aiVL+we85ZkIyT3eAqNCms477/CHGkoVAVeWgw6uVUnWojGP2+rd/h+uSwkC3J7hcO9ScUKpN+1iDDQRy0HD7xhvpJ0WzUNtScqQ==
+          AWS_ACCESS_KEY_ID: ASIAUZTGPSLAIU4BMUP7
+          AWS_SECRET_ACCESS_KEY: ueUDYY2k39wcaUrDKmbdr9g7f8ACrPMw2BX3N7EI
+          AWS_SESSION_TOKEN: IQoJb3JpZ2luX2VjEBgaCXVzLXdlc3QtMiJHMEUCIBHYvN5SUS/oCnGSt89Bj6v9siOlxnavnwqVWh3ETWrwAiEAnpDJHZMHgNmA8Bgqr6VdjwDgoFDLswL+JtIRqdMVM8oqsAII4f//////////ARAAGgwzMjk4NTM2NzAwODAiDGsKjFZpviPrDOehHyqEAm+Xt4Kf88v0KY3a+uQawu66qnyOeiZwEcKUR8jV4RqotuH7NfRZJJQuQZZMq+DA7GHKnz1tex1SMfAVX2bjguq5CbR3RYAwbN4QLP+XS9HREfJdjyLrEqH917PeYPbZQOZMVaPUuHWhqTihueXWndBqUvtrFP5eCnJUXfwhyb1MXGjSgjgwpxmvHOqNfzH5wuNuaI9FFE86K2LrKeqYjNYhYAAFx5kMuPvPImpMq6B9I+Vdww+dpshHBPrd6/1qFKKmoUeEF8tyv08mYE3RMbF9Sh5Zlq3reNAMZBwmjCL5ZQlYdvMFIFqtn4gnD4GMtylb86WzCxoZlNsDViPGdsEfWtVPMMfxp7sGOp0B2T9W/5HVmdhu2sVrPsW7IzqQEpnU0qvYYAXikeV84bZ44JHysIRGkDgEKSVEFCmdQ9fn4MgX/j9E9N3f0p5UciszM83kI6nvVh/ssG698K51n2ENSA4hQb6xfrfzm9JFp+YXIMipQdABchDpzVJBrq7NjNLrZIpDrQlI2bMNQh62WutLAsRwabDZGIZOs6W4xwQxPIQuvH+ZUV+U2w==
           AWS_DEFAULT_REGION: us-east-1
         run: |
           python src/deployment.py
