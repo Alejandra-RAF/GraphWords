@@ -1,4 +1,4 @@
-name: GraphWord Deployment Hybrid (AWS + LocalStack)
+name: Hybrid Deployment (AWS + LocalStack)
 
 on:
   push:
@@ -16,47 +16,30 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: "3.9"
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install boto3
+          pip install -r requirements.txt
 
   start-localstack:
     needs: setup-environment
     runs-on: ubuntu-22.04
     steps:
-      - name: Start LocalStack using Docker
+      - name: Start LocalStack
         run: |
           docker run -d --name localstack_main -p 4566:4566 -p 4510-4559:4510-4559 -v /var/run/docker.sock:/var/run/docker.sock localstack/localstack
-          
-      - name: Wait for LocalStack to be ready
+
+      - name: Wait for LocalStack
         run: |
           until curl -s http://localhost:4566/_localstack/init | grep -q '"READY": true'; do
             echo "Waiting for LocalStack to be ready..."
             sleep 2
           done
 
-      - name: Check open ports in LocalStack container
-        run: |
-          docker exec localstack_main ss -tuln || docker exec localstack_main curl http://localhost:4566/_localstack/init
-
-
-      - name: Test connectivity inside LocalStack container
-        run: docker exec localstack_main curl http://localhost:4566/_localstack/init
-
-
-      - name: Test connectivity from GitHub Actions host
-        run: curl http://localhost:4566/_localstack/init
-
-      - name: View LocalStack logs
-        run: docker logs localstack_main
-
-
-    
   run-deployment:
-    needs: start-localstack
+    needs: [setup-environment, start-localstack]
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
@@ -65,18 +48,14 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: "3.9"
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install boto3
-          
-      - name: Run deployment script
+      - name: Deploy to AWS + LocalStack
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
           AWS_DEFAULT_REGION: us-east-1
+          LOCALSTACK_URL: http://localhost:4566
         run: |
           python src/deployment.py
