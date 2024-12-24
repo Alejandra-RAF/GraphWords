@@ -4,7 +4,7 @@ import os
 import time
 import json
 
- Configura LocalStack
+# Configura LocalStack
 localstack_url = os.getenv("LOCALSTACK_URL", "http://localhost:4566")
 region_name = os.getenv("AWS_DEFAULT_REGION", "us-east-1")
 
