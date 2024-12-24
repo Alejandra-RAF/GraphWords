@@ -49,7 +49,9 @@ jobs:
           done
 
       - name: Check open ports in LocalStack container
-        run: docker exec localstack_main netstat -tuln
+        run: |
+          docker exec localstack_main ss -tuln || docker exec localstack_main curl http://localhost:4566/_localstack/init
+
 
       - name: Test connectivity inside LocalStack container
         run: docker exec localstack_main curl http://localhost:4566/_localstack/init
