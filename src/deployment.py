@@ -8,7 +8,7 @@ import json
 ec2_client = boto3.client('ec2')
 elb_client = boto3.client('elbv2')
 autoscaling_client = boto3.client('autoscaling')
-s3_client = boto3.client('s3')
+s3 = boto3.client("s3", endpoint_url="http://localhost:4566")
 lambda_client = boto3.client('lambda', endpoint_url='http://localhost:4566')  # LocalStack
 apigateway_client = boto3.client('apigateway')  # Cliente para API Gateway
 
