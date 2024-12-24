@@ -4,17 +4,13 @@ import os
 import time
 import json
 
-# Configura LocalStack
-localstack_url = os.getenv("LOCALSTACK_URL", "http://localhost:4566")
-region_name = os.getenv("AWS_DEFAULT_REGION", "us-east-1")
-
-# Clientes configurados para LocalStack
-ec2_client = boto3.client("ec2", region_name=region_name, endpoint_url=localstack_url)
-elb_client = boto3.client("elbv2", region_name=region_name, endpoint_url=localstack_url)
-autoscaling_client = boto3.client("autoscaling", region_name=region_name, endpoint_url=localstack_url)
-s3_client = boto3.client("s3", region_name=region_name, endpoint_url=localstack_url)
-lambda_client = boto3.client("lambda", region_name=region_name, endpoint_url=localstack_url)
-apigateway_client = boto3.client("apigateway", region_name=region_name, endpoint_url=localstack_url)
+# Crear clientes para AWS y LocalStack
+ec2_client = boto3.client('ec2')
+elb_client = boto3.client('elbv2')
+autoscaling_client = boto3.client('autoscaling')
+s3 = boto3.client("s3")
+lambda_client = boto3.client('lambda', endpoint_url='http://localhost:4566')  # LocalStack
+apigateway_client = boto3.client('apigateway')  # Cliente para API Gateway
 
 # Crear VPC
 def create_vpc():
