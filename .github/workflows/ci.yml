@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  setup-environment:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
@@ -18,38 +18,45 @@ jobs:
         with:
           python-version: "3.9"
 
-      - name: Create Docker network
+      - name: Install dependencies
         run: |
-          docker network create localstack-network
-
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+  start-localstack:
+    needs: setup-environment
+    runs-on: ubuntu-22.04
+    steps:
       - name: Start LocalStack
         run: |
-          docker run -d --name localstack_main --network localstack-network -p 4566:4566 -p 4510-4559:4510-4559 localstack/localstack
-
+          docker run -d --name localstack_main -p 4566:4566 -p 4510-4559:4510-4559 -v /var/run/docker.sock:/var/run/docker.sock localstack/localstack
       - name: Wait for LocalStack
         run: |
-          timeout=120
           until curl -s http://localhost:4566/_localstack/init | grep -q '"READY": true'; do
             echo "Waiting for LocalStack to be ready..."
             sleep 2
-            timeout=$((timeout - 2))
-            if [ $timeout -le 0 ]; then
-              echo "Error: LocalStack no se inicializó a tiempo."
-              docker logs localstack_main
-              exit 1
-            fi
           done
+  run-deployment:
+    needs: [setup-environment, start-localstack]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Debug Environment Variables
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+          
+      - name: Install dependencies
         run: |
-          docker run --network localstack-network -v ${{ github.workspace }}:/app -w /app python:3.9 bash -c "printenv"
-
-      - name: Run deployment script
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Deploy to AWS + LocalStack
         env:
-          AWS_ACCESS_KEY_ID: dummy
-          AWS_SECRET_ACCESS_KEY: dummy
-          AWS_SESSION_TOKEN: dummy
-          AWS_DEFAULT_REGION: us-east-1  # Región definida aquí
-          LOCALSTACK_URL: http://localstack_main:4566
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+          AWS_DEFAULT_REGION: us-east-1
+          LOCALSTACK_URL: http://localhost:4566
         run: |
-          docker run --network localstack-network -v ${{ github.workspace }}:/app -w /app python:3.9 bash -c "pip install -r requirements.txt && python src/deployment.py"
+          python src/deployment.py
