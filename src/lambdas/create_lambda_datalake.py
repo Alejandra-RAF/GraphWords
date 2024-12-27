@@ -5,8 +5,8 @@ import subprocess  # Para ejecutar comandos en la terminal
 import shutil      # Para manejar directorios
 
 # Configuración para LocalStack
-lambda_client = boto3.client('lambda', endpoint_url="http://localhost:4566")
-s3_client = boto3.client('s3', endpoint_url="http://localhost:4566")
+lambda_client = boto3.client('lambda', endpoint_url="http://host.docker.internal:4566")
+s3_client = boto3.client('s3', endpoint_url="http://host.docker.internal:4566")
 
 def create_bucket(bucket_name):
     """Crear un bucket S3 en LocalStack."""
