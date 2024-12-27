@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  setup-environment:
+  deployment:
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout code
@@ -23,10 +23,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-  start-localstack:
-    needs: setup-environment
-    runs-on: ubuntu-22.04
-    steps:
       - name: Start LocalStack
         run: |
           docker run -d --name localstack_main -p 4566:4566 -p 4510-4559:4510-4559 -v /var/run/docker.sock:/var/run/docker.sock localstack/localstack
@@ -48,23 +44,6 @@ jobs:
             echo "Waiting for LocalStack to be ready..."
             sleep 2
           done
-
-  run-deployment:
-    needs: [setup-environment, start-localstack]
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.9"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
 
       - name: Deploy to AWS + LocalStack
         env:
