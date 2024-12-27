@@ -58,7 +58,12 @@ def create_lambda_function(function_name, handler, bucket_name, script_key):
             Handler=handler,
             Code={'S3Bucket': bucket_name, 'S3Key': script_key},
             Timeout=120,
-            MemorySize=128
+            MemorySize=128,
+            Environment={
+                'Variables': {
+                    'LOCALSTACK_URL': os.getenv('LOCALSTACK_URL')
+                }
+            }
         )
         function_arn = response['FunctionArn']
         print(f"Función Lambda '{function_name}' creada con ARN: {function_arn}")
