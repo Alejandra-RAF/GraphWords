@@ -9,7 +9,7 @@ ec2_client = boto3.client('ec2')
 elb_client = boto3.client('elbv2')
 autoscaling_client = boto3.client('autoscaling')
 s3 = boto3.client("s3")
-lambda_client = boto3.client('lambda')  # LocalStack
+lambda_client = boto3.client('lambda', endpoint_url='http://host.docker.internal:4566')  # LocalStack
 apigateway_client = boto3.client('apigateway')  # Cliente para API Gateway
 
 # Crear VPC
