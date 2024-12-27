@@ -4,7 +4,8 @@ import os
 import time
 import json
 
-LOCALSTACK_URL = os.environ.get("LOCALSTACK_URL", "http://localhost:4566")
+LOCALSTACK_URL = os.getenv('LOCALSTACK_URL', 'http://localhost:4566')
+print(f"Conectando a LocalStack en {LOCALSTACK_URL}")
 
 # Crear clientes para AWS y LocalStack
 ec2_client = boto3.client('ec2')
