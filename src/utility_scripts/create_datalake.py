@@ -3,7 +3,10 @@ import os
 import sys
 import urllib.request
 
-s3 = boto3.client('s3', endpoint_url="http://172.17.0.2:4566")
+LOCALSTACK_URL = os.getenv('LOCALSTACK_URL', 'http://localhost:4566')
+print(f"Conectando a LocalStack en {LOCALSTACK_URL}")
+
+s3 = boto3.client('s3', endpoint_url=LOCALSTACK_URL)
 bucket_datalake = "datalake"
 
 def bucket_exists(bucket_name):

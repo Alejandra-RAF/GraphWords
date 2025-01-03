@@ -1,6 +1,7 @@
 import boto3
 import json
 from flask import Flask, request, jsonify
+import os
 from werkzeug.datastructures import ImmutableMultiDict
 from create_functions_api import (
     obtener_nombre_archivo_en_s3,
@@ -14,8 +15,11 @@ from create_functions_api import (
 # Inicializar aplicación Flask
 app = Flask(__name__)
 
+LOCALSTACK_URL = os.getenv('LOCALSTACK_URL', 'http://localhost:4566')
+print(f"Conectando a LocalStack en {LOCALSTACK_URL}")
+
 # Configuración S3
-s3 = boto3.client('s3', endpoint_url="http://localhost:4566")  # Cambiar si no usas LocalStack
+s3 = boto3.client('s3', endpoint_url=LOCALSTACK_URL)  # Cambiar si no usas LocalStack
 bucket_name = 'datamart'
 
 

@@ -5,9 +5,12 @@ import subprocess  # Para ejecutar comandos en la terminal
 import shutil      # Para manejar directorios
 import sys
 
+LOCALSTACK_URL = os.getenv('LOCALSTACK_URL', 'http://localhost:4566')
+print(f"Conectando a LocalStack en {LOCALSTACK_URL}")
+
 # Configuración para LocalStack
-lambda_client = boto3.client('lambda', endpoint_url="http://localhost:4566")
-s3_client = boto3.client('s3', endpoint_url="http://localhost:4566")
+lambda_client = boto3.client('lambda', endpoint_url=LOCALSTACK_URL)
+s3_client = boto3.client('s3', endpoint_url=LOCALSTACK_URL)
 
 def create_bucket(bucket_name):
     """Crear un bucket S3 en LocalStack."""
@@ -56,7 +59,12 @@ def create_lambda_function(function_name, handler, bucket_name, script_key):
             Handler=handler,
             Code={'S3Bucket': bucket_name, 'S3Key': script_key},
             Timeout=120,
-            MemorySize=128
+            MemorySize=128,
+            Environment={
+                'Variables': {
+                    'LOCALSTACK_URL': os.getenv('LOCALSTACK_URL')
+                }
+            }
         )
         function_arn = response['FunctionArn']
         print(f"Función Lambda '{function_name}' creada con ARN: {function_arn}")
