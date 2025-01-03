@@ -74,7 +74,8 @@ jobs:
           echo "$HOME/ngrok" >> $GITHUB_PATH
       
           # Verificar la instalación
-          ngrok version
+          $HOME/ngrok/ngrok version
+
 
 
 
