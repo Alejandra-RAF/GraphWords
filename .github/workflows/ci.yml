@@ -1,4 +1,4 @@
-name: Hybrid Deployment (AWS + LocalStack)
+name: Hybrid Deployment (AWS + LocalStack + Ngrok)
 
 on:
   push:
@@ -10,23 +10,28 @@ jobs:
   deployment:
     runs-on: ubuntu-22.04
     steps:
+      # 1. Checkout del repositorio
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # 2. Configuración de Python
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
 
+      # 3. Instalar dependencias
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # 4. Iniciar LocalStack
       - name: Start LocalStack
         run: |
           docker run -d --name localstack_main -p 4566:4566 -p 4510-4559:4510-4559 -v /var/run/docker.sock:/var/run/docker.sock localstack/localstack
 
+      # 5. Obtener la IP del contenedor de LocalStack
       - name: Obtener la IP del contenedor de LocalStack
         id: get-localstack-ip
         run: |
@@ -34,10 +39,12 @@ jobs:
           echo "IP de LocalStack obtenida: $LOCALSTACK_IP"
           echo "LOCALSTACK_URL=http://${LOCALSTACK_IP}:4566" >> $GITHUB_ENV
 
+      # 6. Debug LOCALSTACK_URL
       - name: Debug LOCALSTACK_URL
         run: |
           echo "URL de LocalStack: $LOCALSTACK_URL"
 
+      # 7. Esperar a que LocalStack esté listo
       - name: Wait for LocalStack
         run: |
           until curl -s $LOCALSTACK_URL/_localstack/init | grep -q '"READY": true'; do
@@ -45,6 +52,32 @@ jobs:
             sleep 2
           done
 
+      # 8. Instalar Ngrok
+      - name: Install Ngrok
+        run: |
+          curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
+          echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | tee /etc/apt/sources.list.d/ngrok.list
+          apt update && apt install ngrok
+
+      # 9. Lanzar Ngrok en segundo plano
+      - name: Start Ngrok
+        run: |
+          nohup ngrok http 4566 &
+
+      # 10. Obtener la URL pública de Ngrok
+      - name: Get Ngrok URL
+        id: ngrok-url
+        run: |
+          sleep 10
+          NGROK_URL=$(curl --silent http://127.0.0.1:4040/api/tunnels | jq -r '.tunnels[0].public_url')
+          echo "NGROK_URL=${NGROK_URL}" >> $GITHUB_ENV
+
+      # 11. Debug de la URL de Ngrok
+      - name: Debug Ngrok URL
+        run: |
+          echo "Public Ngrok URL: $NGROK_URL"
+
+      # 12. Ejecutar el despliegue con `deployment.py`
       - name: Deploy to AWS + LocalStack
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -54,5 +87,11 @@ jobs:
           LOCALSTACK_URL: ${{ env.LOCALSTACK_URL }}
         run: |
           echo "Usando LocalStack en $LOCALSTACK_URL"
-          curl -s $LOCALSTACK_URL || echo "Cannot reach LocalStack at $LOCALSTACK_URL"
           python src/deployment.py
+
+      # 13. Realizar solicitud `GET /camino_mas_largo`
+      - name: Perform Request
+        run: |
+          curl --fail "${NGROK_URL}/camino_mas_largo?start=the&end=and" -o response.json
+          echo "Response:"
+          cat response.json
