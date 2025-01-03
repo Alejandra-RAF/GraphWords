@@ -8,7 +8,6 @@ print(f"Conectando a LocalStack en {LOCALSTACK_URL}")
 
 s3 = boto3.client('s3', endpoint_url=LOCALSTACK_URL)
 bucket_datalake = "datalake"
-
 def bucket_exists(bucket_name):
     existing_buckets = s3.list_buckets()
     for bucket in existing_buckets.get('Buckets', []):

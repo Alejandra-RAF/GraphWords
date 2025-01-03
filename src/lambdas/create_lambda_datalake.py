@@ -3,7 +3,6 @@ import zipfile
 import os
 import subprocess  # Para ejecutar comandos en la terminal
 import shutil      # Para manejar directorios
-import sys
 
 LOCALSTACK_URL = os.getenv('LOCALSTACK_URL', 'http://localhost:4566')
 print(f"Conectando a LocalStack en {LOCALSTACK_URL}")
@@ -24,7 +23,7 @@ def install_dependencies(output_dir):
     """Instalar dependencias en un directorio."""
     try:
         print("Instalando dependencias en el directorio de empaquetado...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "aiohttp", "-t", output_dir])
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "sys", "aiohttp", "-t", output_dir])
         print("Dependencias instaladas exitosamente.")
     except Exception as e:
         print(f"Error al instalar dependencias: {e}")
@@ -59,12 +58,7 @@ def create_lambda_function(function_name, handler, bucket_name, script_key):
             Handler=handler,
             Code={'S3Bucket': bucket_name, 'S3Key': script_key},
             Timeout=120,
-            MemorySize=128,
-            Environment={
-                'Variables': {
-                    'LOCALSTACK_URL': os.getenv('LOCALSTACK_URL')
-                }
-            }
+            MemorySize=128
         )
         function_arn = response['FunctionArn']
         print(f"Función Lambda '{function_name}' creada con ARN: {function_arn}")

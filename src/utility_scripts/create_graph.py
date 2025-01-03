@@ -7,7 +7,7 @@ print(f"Conectando a LocalStack en {LOCALSTACK_URL}")
 # Configuración de los buckets y el cliente S3
 s3 = boto3.client('s3', endpoint_url=LOCALSTACK_URL)
 bucket_input = "datamart"  
-bucket_output = "graph"  
+bucket_output = "graph" 
 
 
 def bucket_exists(bucket_name):

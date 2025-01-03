@@ -4,7 +4,6 @@ from flask import Flask, request, jsonify
 import os
 from werkzeug.datastructures import ImmutableMultiDict
 from create_functions_api import (
-    obtener_nombre_archivo_en_s3,
     leer_diccionario_desde_s3,
     dijkstra,
     camino_mas_largo,
@@ -20,26 +19,20 @@ print(f"Conectando a LocalStack en {LOCALSTACK_URL}")
 
 # Configuración S3
 s3 = boto3.client('s3', endpoint_url=LOCALSTACK_URL)  # Cambiar si no usas LocalStack
-bucket_name = 'datamart'
 
+bucket_name = 'graph'
+file_name = "processed_palabras_3.txt"
 
-def s3_file_exists(bucket_name, prefix=""):
-    """Verifica si hay archivos disponibles en el bucket con un prefijo."""
-    file_key = obtener_nombre_archivo_en_s3(bucket_name, prefix)
-    if not file_key:
-        return None
-    return file_key
 
 
 @app.route('/Dijkstra/', methods=['GET'])
 def api_dijkstra():
     """Ruta para obtener el camino más corto usando el algoritmo de Dijkstra."""
     try:
-        file_key = s3_file_exists(bucket_name)
-        if not file_key:
+        if not file_name:
             return jsonify({"message": "No se encontró el archivo en S3"}), 404
 
-        _, graph = leer_diccionario_desde_s3(bucket_name, file_key)
+        _, graph = leer_diccionario_desde_s3(bucket_name, file_name)
 
         start_word = request.args.get('start')
         target_word = request.args.get('target')
@@ -67,11 +60,10 @@ def api_dijkstra():
 def api_camino_mas_largo():
     """Ruta para obtener el camino más largo entre nodos."""
     try:
-        file_key = s3_file_exists(bucket_name)
-        if not file_key:
+        if not file_name:
             return jsonify({"message": "No se encontró el archivo en S3"}), 404
 
-        _, graph = leer_diccionario_desde_s3(bucket_name, file_key)
+        _, graph = leer_diccionario_desde_s3(bucket_name, file_name)
 
         start = request.args.get('start')
         end = request.args.get('end')
@@ -102,11 +94,12 @@ def api_camino_mas_largo():
 def api_nodos_aislados():
     """Ruta para identificar nodos aislados."""
     try:
-        file_key = s3_file_exists(bucket_name)
-        if not file_key:
-            return jsonify({"message": "No se encontró el archivo en S3"}), 404
+        _, graph = leer_diccionario_desde_s3(bucket_name, file_name)
+        if graph is None:
+            print("El grafo es None. Asegúrate de que leer_diccionario_desde_s3 está funcionando correctamente.")
+            return jsonify({"message": "El grafo no se pudo construir desde el archivo."}), 500
 
-        _, graph = leer_diccionario_desde_s3(bucket_name, file_key)
+        print("Grafo recibido para nodos aislados:", graph)  # Depuración
         nodos_aislados = detectar_nodos_aislados(graph)
 
         return jsonify({
@@ -121,11 +114,10 @@ def api_nodos_aislados():
 def api_nodos_alto_grado():
     """Ruta para obtener nodos con alto grado de conectividad."""
     try:
-        file_key = s3_file_exists(bucket_name)
-        if not file_key:
+        if not file_name:
             return jsonify({"message": "No se encontró el archivo en S3"}), 404
 
-        _, graph = leer_diccionario_desde_s3(bucket_name, file_key)
+        _, graph = leer_diccionario_desde_s3(bucket_name, file_name)
         conectividad = Conectividad(graph)
 
         umbral = request.args.get('umbral', default=1, type=int)
@@ -144,11 +136,10 @@ def api_nodos_alto_grado():
 def api_nodos_grado_especifico():
     """Ruta para obtener nodos con grado específico."""
     try:
-        file_key = s3_file_exists(bucket_name)
-        if not file_key:
+        if not file_name:
             return jsonify({"message": "No se encontró el archivo en S3"}), 404
 
-        _, graph = leer_diccionario_desde_s3(bucket_name, file_key)
+        _, graph = leer_diccionario_desde_s3(bucket_name, file_name)
         conectividad = Conectividad(graph)
 
         grado = request.args.get('grado', default=1, type=int)
@@ -163,12 +154,46 @@ def api_nodos_grado_especifico():
         return jsonify({"message": f"Error en nodos grado específico: {str(e)}"}), 500
 
 
+
+
 def main(event, context):
-    """Punto de entrada de Lambda."""
-    print("Evento recibido por Lambda:", json.dumps(event, indent=2))  # Imprime el evento completo
+    # Verifica que el evento contenga queryStringParameters
+    if not event or not event.get("queryStringParameters"):
+        return {
+            "statusCode": 400,
+            "body": json.dumps({"mensaje": "Evento vacío o parámetros faltantes. Por favor, envía parámetros válidos."})
+        }
     
+    # Obtén los parámetros 'start' y 'end' de la consulta
+    start = event["queryStringParameters"].get("start")
+    end = event["queryStringParameters"].get("end")
+
+    # Valida que ambos parámetros existan
+    if not start or not end:
+        return {
+            "statusCode": 400,
+            "body": json.dumps({"mensaje": "Parámetros 'start' y 'end' son obligatorios."})
+        }
+    
+    # Log para ver los valores en CloudWatch
+    print(f"Parámetro start: {start}, Parámetro end: {end}")
+    print("Evento completo recibido:", json.dumps(event, indent=2))
+
+    # Devuelve una respuesta simulando un procesamiento exitoso
+    return {
+        "statusCode": 200,
+        "body": json.dumps({
+            "mensaje": "Evento recibido correctamente",
+            "start": start,
+            "end": end,
+            "evento": event  # Esto incluye todo el evento recibido para depuración
+        })
+    }
+
+
+    # Crear contexto de Flask
     with app.test_request_context(
-        path=event.get('path', '/'),
+        path=path,
         method=event.get('httpMethod', 'GET'),
         query_string=ImmutableMultiDict(event.get('queryStringParameters') or {})
     ):
@@ -177,13 +202,12 @@ def main(event, context):
             "statusCode": response.status_code,
             "headers": dict(response.headers),
             "body": response.get_data(as_text=True)
-        })  # Imprime la respuesta generada
+        })
         return {
             "statusCode": response.status_code,
             "headers": dict(response.headers),
             "body": response.get_data(as_text=True)
         }
-
 
 if __name__ == '__main__':
     app.run(debug=True)

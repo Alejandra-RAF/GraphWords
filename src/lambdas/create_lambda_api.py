@@ -58,12 +58,7 @@ def create_lambda_function(function_name, handler, bucket_name, script_key):
             Handler=handler,
             Code={'S3Bucket': bucket_name, 'S3Key': script_key},
             Timeout=120,
-            MemorySize=128,
-            Environment={
-                'Variables': {
-                    'LOCALSTACK_URL': os.getenv('LOCALSTACK_URL')
-                }
-            }
+            MemorySize=128
         )
         function_arn = response['FunctionArn']
         print(f"Función Lambda '{function_name}' creada con ARN: {function_arn}")
@@ -94,7 +89,7 @@ def main():
         shutil.rmtree(package_dir)  # Eliminar si existe
     os.makedirs(package_dir)
 
-    # Copiar scripts al directorio
+    # Copiar script al directorio
     for file in script_files:
         shutil.copy(file, package_dir)
 
@@ -121,6 +116,7 @@ def main():
     if os.path.exists(package_dir):
         shutil.rmtree(package_dir)
     print("Limpieza completada.")
+
 
 if __name__ == '__main__':
     main()
