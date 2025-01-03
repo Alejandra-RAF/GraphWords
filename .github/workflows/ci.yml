@@ -60,6 +60,8 @@ jobs:
 
       - name: Download and Install Ngrok
         run: |
+          # Crear un directorio para Ngrok
+          mkdir -p $HOME/ngrok
           # Descargar el archivo .tgz desde el sitio oficial
           curl -L https://ngrok-agent.s3.amazonaws.com/ngrok-stable-linux-amd64.tgz -o $HOME/ngrok/ngrok.tgz
           # Extraer el binario
@@ -70,6 +72,7 @@ jobs:
           sudo mv $HOME/ngrok/ngrok /usr/local/bin/ngrok
           # Verificar la instalación
           ngrok version
+
 
 
 
