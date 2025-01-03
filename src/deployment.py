@@ -17,9 +17,9 @@ apigateway_client = boto3.client('apigateway')  # Cliente para API Gateway
 
 # Solicitar URL de Ngrok al usuario
 def get_ngrok_url():
-    ngrok_url = input("Por favor, ingresa la URL pública de Ngrok (ejemplo: https://xxxx-xx-xx-xx.ngrok-free.app): ").strip()
+    ngrok_url = os.getenv('NGROK_URL')
     if not ngrok_url:
-        raise Exception("La URL de Ngrok es obligatoria.")
+        raise ValueError("La variable de entorno NGROK_URL no está definida.")
     return ngrok_url
 
 # Crear VPC
