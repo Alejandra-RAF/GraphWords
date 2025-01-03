@@ -60,10 +60,8 @@ jobs:
 
       - name: Download and Install Ngrok
         run: |
-          # Crear un directorio para Ngrok
-          mkdir -p $HOME/ngrok
-          # Descargar el binario de Ngrok más reciente
-          curl -L https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-v3-stable-linux-amd64.tgz -o $HOME/ngrok/ngrok.tgz
+          # Descargar el archivo .tgz desde el sitio oficial
+          curl -L https://ngrok-agent.s3.amazonaws.com/ngrok-stable-linux-amd64.tgz -o $HOME/ngrok/ngrok.tgz
           # Extraer el binario
           tar -xvzf $HOME/ngrok/ngrok.tgz -C $HOME/ngrok
           # Dar permisos de ejecución al binario
@@ -78,7 +76,7 @@ jobs:
       # 9. Autenticar Ngrok con el authtoken
       - name: Authenticate Ngrok
         run: |
-          $HOME/ngrok/ngrok authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
+          ngrok authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
 
       # 10. Lanzar Ngrok en segundo plano
       - name: Start Ngrok
