@@ -53,11 +53,14 @@ jobs:
           done
 
       # 8. Instalar Ngrok
-      - name: Install Ngrok
+      - name: Download and Install Ngrok (local)
         run: |
-          curl -s https://ngrok-agent.s3.amazonaws.com/ngrok.asc | tee /etc/apt/trusted.gpg.d/ngrok.asc >/dev/null
-          echo "deb https://ngrok-agent.s3.amazonaws.com buster main" | tee /etc/apt/sources.list.d/ngrok.list
-          apt update && apt install ngrok
+          mkdir -p ngrok
+          curl -L https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip -o ngrok/ngrok.zip
+          unzip ngrok/ngrok.zip -d ngrok
+          chmod +x ngrok/ngrok
+          ./ngrok version  # Verifica la versión
+
 
       # 9. Lanzar Ngrok en segundo plano
       - name: Start Ngrok
