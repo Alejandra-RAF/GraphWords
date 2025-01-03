@@ -56,6 +56,9 @@ jobs:
       - name: Install unzip
         run: sudo apt-get install -y unzip
 
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
       - name: Download and Install Ngrok
         run: |
           # Crear un directorio para Ngrok
@@ -76,29 +79,23 @@ jobs:
           # Verificar la instalación
           $HOME/ngrok/ngrok version
 
-
-
-
-
       # 9. Lanzar Ngrok en segundo plano
       - name: Start Ngrok
         run: |
-          nohup ngrok http 4566 &
-
-      # 10. Obtener la URL pública de Ngrok
+          nohup ./ngrok http 4566 &
+      
       - name: Get Ngrok URL
-        id: ngrok-url
+        id: get-ngrok-url
         run: |
-          sleep 10
+          sleep 10  # Espera para asegurar que Ngrok esté listo
           NGROK_URL=$(curl --silent http://127.0.0.1:4040/api/tunnels | jq -r '.tunnels[0].public_url')
           echo "NGROK_URL=${NGROK_URL}" >> $GITHUB_ENV
-
-      # 11. Debug de la URL de Ngrok
+          echo "NGROK_URL=${NGROK_URL}"
+      
       - name: Debug Ngrok URL
         run: |
           echo "Public Ngrok URL: $NGROK_URL"
-
-      # 12. Ejecutar el despliegue con `deployment.py`
+      
       - name: Deploy to AWS + LocalStack
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -106,11 +103,14 @@ jobs:
           AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
           AWS_DEFAULT_REGION: us-east-1
           LOCALSTACK_URL: ${{ env.LOCALSTACK_URL }}
+          NGROK_URL: ${{ env.NGROK_URL }}
         run: |
           echo "Usando LocalStack en $LOCALSTACK_URL"
+          echo "Usando Ngrok en $NGROK_URL"
           python src/deployment.py
 
-      # 13. Realizar solicitud `GET /camino_mas_largo`
+
+      # 10. Realizar solicitud `GET /camino_mas_largo`
       - name: Perform Request
         run: |
           curl --fail "${NGROK_URL}/camino_mas_largo?start=the&end=and" -o response.json
