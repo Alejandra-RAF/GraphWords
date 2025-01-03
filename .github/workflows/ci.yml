@@ -63,9 +63,7 @@ jobs:
           # Crear un directorio para Ngrok
           mkdir -p $HOME/ngrok
           # Descargar el binario de Ngrok
-          curl -L https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-linux-amd64.zip -o $HOME/ngrok/ngrok.zip
-          # Extraer el binario
-          unzip $HOME/ngrok/ngrok.zip -d $HOME/ngrok
+          sudo tar -xvzf ~/Downloads/ngrok-v3-stable-linux-amd64.tgz -C $HOME/ngrok/ngrok.tgz
           # Dar permisos de ejecución al binario
           chmod +x $HOME/ngrok/ngrok
           # Agregar Ngrok al PATH
