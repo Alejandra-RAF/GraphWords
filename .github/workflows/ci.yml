@@ -63,7 +63,7 @@ jobs:
           # Crear un directorio para Ngrok
           mkdir -p $HOME/ngrok
           # Descargar el archivo .tgz desde el sitio oficial
-          curl -L https://ngrok-agent.s3.amazonaws.com/ngrok-stable-linux-amd64.tgz -o $HOME/ngrok/ngrok.tgz
+          curl -L https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-v3-stable-linux-amd64.tgz -o $HOME/ngrok/ngrok.tgz
           # Extraer el binario
           tar -xvzf $HOME/ngrok/ngrok.tgz -C $HOME/ngrok
           # Dar permisos de ejecución al binario
