@@ -63,15 +63,16 @@ jobs:
           # Crear un directorio para Ngrok
           mkdir -p $HOME/ngrok
           # Descargar el binario de Ngrok más reciente
-          curl -L https://ngrok.com/download -o $HOME/ngrok/ngrok.zip
+          curl -L https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-v3-stable-linux-amd64.tgz -o $HOME/ngrok/ngrok.tgz
           # Extraer el binario
-          unzip $HOME/ngrok/ngrok.zip -d $HOME/ngrok
+          tar -xvzf $HOME/ngrok/ngrok.tgz -C $HOME/ngrok
           # Dar permisos de ejecución al binario
           chmod +x $HOME/ngrok/ngrok
-          # Agregar Ngrok al PATH
-          echo "$HOME/ngrok" >> $GITHUB_PATH
+          # Mover el binario a /usr/local/bin
+          sudo mv $HOME/ngrok/ngrok /usr/local/bin/ngrok
           # Verificar la instalación
-          $HOME/ngrok/ngrok version
+          ngrok version
+
 
 
       # 9. Autenticar Ngrok con el authtoken
