@@ -36,8 +36,8 @@ jobs:
         id: get-localstack-ip
         run: |
           LOCALSTACK_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' localstack_main)
-          echo "IP de LocalStack obtenida: $LOCALSTACK_IP"
           echo "LOCALSTACK_URL=http://${LOCALSTACK_IP}:4566" >> $GITHUB_ENV
+          echo "IP de LocalStack: $LOCALSTACK_URL"
 
       # 6. Debug LOCALSTACK_URL
       - name: Debug LOCALSTACK_URL
@@ -84,14 +84,9 @@ jobs:
           sleep 10
           NGROK_URL=$(curl --silent http://127.0.0.1:4040/api/tunnels | jq -r '.tunnels[0].public_url')
           echo "NGROK_URL=${NGROK_URL}" >> $GITHUB_ENV
-          echo "NGROK_URL=${NGROK_URL}"
-
-      # 12. Debug Ngrok URL
-      - name: Debug Ngrok URL
-        run: |
           echo "Public Ngrok URL: $NGROK_URL"
 
-      # 13. Desplegar en AWS + LocalStack
+      # 12. Desplegar en AWS + LocalStack
       - name: Deploy to AWS + LocalStack
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -101,11 +96,9 @@ jobs:
           LOCALSTACK_URL: ${{ env.LOCALSTACK_URL }}
           NGROK_URL: ${{ env.NGROK_URL }}
         run: |
-          echo "Usando LocalStack en $LOCALSTACK_URL"
-          echo "Usando Ngrok en $NGROK_URL"
           python src/deployment.py | tee deployment_output.txt
 
-      # 14. Capturar la URL de la API Gateway
+      # 13. Capturar la URL de la API Gateway
       - name: Get API Gateway URL from output
         id: get-api-url
         run: |
@@ -117,10 +110,10 @@ jobs:
           echo "API_URL=${API_URL}" >> $GITHUB_ENV
           echo "API Gateway URL: $API_URL"
 
-      # 15. Realizar solicitud `GET /camino_mas_largo`
-      - name: Perform Request
+      # 14. Realizar solicitud GET /camino_mas_largo
+      - name: Perform API Request
         run: |
           echo "Performing GET request to API Gateway URL: $API_URL/camino_mas_largo?start=the&end=and"
-          curl --fail "${API_URL}/camino_mas_largo?start=the&end=and" -o response.json
+          curl -X GET "$API_URL/camino_mas_largo?start=the&end=and" -o response.json
           echo "Response:"
           cat response.json
