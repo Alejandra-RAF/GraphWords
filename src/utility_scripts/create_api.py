@@ -161,7 +161,7 @@ def main(event, context):
     if not event or not event.get("queryStringParameters"):
         return {
             "statusCode": 400,
-            "body": json.dumps({"mensaje": "Evento vacio o parametros faltantes. Por favor, envia parametros validos."})
+            "body": json.dumps({"mensaje": "Evento vacío o parámetros faltantes. Por favor, envía parámetros válidos."})
         }
     
     # Obtén los parámetros 'start' y 'end' de la consulta
