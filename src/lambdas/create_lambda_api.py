@@ -35,7 +35,7 @@ def create_zip_file(source_dir, zip_name):
             for root, dirs, files in os.walk(source_dir):
                 for file in files:
                     file_path = os.path.join(root, file)
-                    print(f"Prueba de importación de 'os': {os}")
+                    print(f"Incluyendo en ZIP: {file_path}") 
                     zipf.write(file_path, arcname=os.path.relpath(file_path, source_dir))
         print(f"Archivo ZIP creado correctamente: {zip_name}")
     except Exception as e:
