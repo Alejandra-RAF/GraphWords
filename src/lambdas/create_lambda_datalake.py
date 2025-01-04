@@ -4,7 +4,7 @@ import os
 import subprocess  # Para ejecutar comandos en la terminal
 import shutil      # Para manejar directorios
 
-LOCALSTACK_URL = os.getenv('LOCALSTACK_URL', 'http://localhost:4566')
+LOCALSTACK_URL = os.getenv('LOCALSTACK_URL', 'http://172.17.0.2:4566')
 print(f"Conectando a LocalStack en {LOCALSTACK_URL}")
 
 # Configuración para LocalStack
@@ -23,7 +23,7 @@ def install_dependencies(output_dir):
     """Instalar dependencias en un directorio."""
     try:
         print("Instalando dependencias en el directorio de empaquetado...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "sys", "aiohttp", "-t", output_dir])
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "aiohttp", "-t", output_dir])
         print("Dependencias instaladas exitosamente.")
     except Exception as e:
         print(f"Error al instalar dependencias: {e}")
