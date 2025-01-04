@@ -14,7 +14,7 @@ from create_functions_api import (
 # Inicializar aplicación Flask
 app = Flask(__name__)
 
-LOCALSTACK_URL = os.getenv('LOCALSTACK_URL', 'http://localhost:4566')
+LOCALSTACK_URL = os.getenv('LOCALSTACK_URL', 'http://172.17.0.2:4566')
 print(f"Conectando a LocalStack en {LOCALSTACK_URL}")
 
 # Configuración S3
