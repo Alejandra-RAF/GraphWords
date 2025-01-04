@@ -165,6 +165,7 @@ def api_nodos_grado_especifico():
 
 def main(event, context):
     """Punto de entrada de Lambda."""
+    print(f"Prueba de importación de 'os': {os}")
     print("Evento recibido por Lambda:", json.dumps(event, indent=2))  # Imprime el evento completo
     
     with app.test_request_context(
