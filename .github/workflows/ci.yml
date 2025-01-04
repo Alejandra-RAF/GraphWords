@@ -60,19 +60,12 @@ jobs:
 
       - name: Download and Install Ngrok
         run: |
-          # Crear un directorio para Ngrok
           mkdir -p $HOME/ngrok
-          # Descargar el binario de Ngrok
           curl -L https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz -o $HOME/ngrok/ngrok.tgz
-          # Extraer el binario
           tar -xvzf $HOME/ngrok/ngrok.tgz -C $HOME/ngrok
-          # Dar permisos de ejecución al binario
           chmod +x $HOME/ngrok/ngrok
-          # Agregar Ngrok al PATH
           echo "$HOME/ngrok" >> $GITHUB_PATH
-          # Verificar la instalación
           $HOME/ngrok/ngrok version
-
 
       # 9. Autenticar Ngrok con el authtoken
       - name: Authenticate Ngrok
@@ -88,7 +81,7 @@ jobs:
       - name: Get Ngrok URL
         id: get-ngrok-url
         run: |
-          sleep 10  # Espera para asegurar que Ngrok esté listo
+          sleep 10
           NGROK_URL=$(curl --silent http://127.0.0.1:4040/api/tunnels | jq -r '.tunnels[0].public_url')
           echo "NGROK_URL=${NGROK_URL}" >> $GITHUB_ENV
           echo "NGROK_URL=${NGROK_URL}"
@@ -110,11 +103,24 @@ jobs:
         run: |
           echo "Usando LocalStack en $LOCALSTACK_URL"
           echo "Usando Ngrok en $NGROK_URL"
-          python src/deployment.py
+          python src/deployment.py | tee deployment_output.txt
 
-      # 14. Realizar solicitud `GET /camino_mas_largo`
+      # 14. Capturar la URL de la API Gateway
+      - name: Get API Gateway URL from output
+        id: get-api-url
+        run: |
+          API_URL=$(grep -oP 'https://[a-z0-9]+\.execute-api\.[^/]+/[^"]+' deployment_output.txt)
+          if [ -z "$API_URL" ]; then
+            echo "Error: No se pudo encontrar la URL de la API Gateway en la salida."
+            exit 1
+          fi
+          echo "API_URL=${API_URL}" >> $GITHUB_ENV
+          echo "API Gateway URL: $API_URL"
+
+      # 15. Realizar solicitud `GET /camino_mas_largo`
       - name: Perform Request
         run: |
-          curl --fail "${NGROK_URL}/camino_mas_largo?start=the&end=and" -o response.json
+          echo "Performing GET request to API Gateway URL: $API_URL/camino_mas_largo?start=the&end=and"
+          curl --fail "${API_URL}/camino_mas_largo?start=the&end=and" -o response.json
           echo "Response:"
           cat response.json
