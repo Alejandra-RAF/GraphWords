@@ -75,7 +75,7 @@ jobs:
       # 10. Lanzar Ngrok en segundo plano
       - name: Start Ngrok
         run: |
-          nohup $HOME/ngrok/ngrok http 5000 &
+          nohup $HOME/ngrok/ngrok http 4566 &
 
       # 11. Obtener la URL pública de Ngrok
       - name: Get Ngrok URL
