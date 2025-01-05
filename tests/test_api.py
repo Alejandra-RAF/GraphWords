@@ -1,34 +1,38 @@
 import requests
-import json
+import os
 
 def test_api():
-    base_url = "http://localhost:4566"
+    endpoints = [
+        "/camino_mas_largo?start=the&end=for",
+        "/Dijkstra/?start=the&target=for",
+        "/nodos_aislados",
+        "/nodos_alto_grado?umbral=3",
+        "/nodos_grado_especifico?grado=2"
+    ]
+    
+    # Obtener la URL de la API desde la variable de entorno
+    api_url = os.getenv("API_URL", "http://172.17.0.2:4566")  # Default a localhost si no se configura
+    
+    if not api_url:
+        print("Error: No se ha definido la variable de entorno 'API_URL'.")
+        return
 
-    # 1. Test /camino_mas_largo
-    response = requests.get(f"{base_url}/camino_mas_largo", params={"start": "the", "end": "for"})
-    print("/camino_mas_largo Response:")
-    print(response.status_code, response.json())
+    print(f"Usando API_URL: {api_url}")
 
-    # 2. Test /Dijkstra/
-    response = requests.get(f"{base_url}/Dijkstra/", params={"start": "the", "target": "end"})
-    print("/Dijkstra/ Response:")
-    print(response.status_code, response.json())
+    for endpoint in endpoints:
+        print(f"\nTesting endpoint: {endpoint}")
+        try:
+            response = requests.get(f"{api_url}{endpoint}")
+            print(f"Status Code: {response.status_code}")
 
-    # 3. Test /nodos_aislados
-    response = requests.get(f"{base_url}/nodos_aislados")
-    print("/nodos_aislados Response:")
-    print(response.status_code, response.json())
+            try:
+                json_data = response.json()
+                print("Response JSON:", json_data)
+            except requests.exceptions.JSONDecodeError:
+                print("Non-JSON response:", response.text)
 
-    # 4. Test /nodos_alto_grado
-    response = requests.get(f"{base_url}/nodos_alto_grado", params={"umbral": 2})
-    print("/nodos_alto_grado Response:")
-    print(response.status_code, response.json())
-
-    # 5. Test /nodos_grado_especifico
-    response = requests.get(f"{base_url}/nodos_grado_especifico", params={"grado": 3})
-    print("/nodos_grado_especifico Response:")
-    print(response.status_code, response.json())
-
+        except requests.exceptions.RequestException as e:
+            print(f"Error during request to {endpoint}: {e}")
 
 if __name__ == "__main__":
     test_api()
