@@ -104,12 +104,13 @@ def obtener_todos_los_caminos(graph, start, target, path=None):
         return []
 
     paths = []
-    for node in graph[start]:
+    for weight, node in graph[start]:  # Desempaquetamos el peso y el nodo vecino
         if node not in path:
             new_paths = obtener_todos_los_caminos(graph, node, target, path)
             for new_path in new_paths:
                 paths.append(new_path)
     return paths
+
 
 def detectar_clusters(graph):
     visited = set()
@@ -119,7 +120,7 @@ def detectar_clusters(graph):
         if node not in visited:
             visited.add(node)
             cluster.append(node)
-            for neighbor in graph[node]:
+            for weight, neighbor in graph[node]:  # Desempaquetamos el peso y el vecino
                 dfs(neighbor, cluster)
 
     for node in graph:
