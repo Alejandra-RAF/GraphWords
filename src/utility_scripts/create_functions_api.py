@@ -116,11 +116,12 @@ def detectar_clusters(graph):
     clusters = []
 
     def dfs(node, cluster):
-        if node not in visited:
-            visited.add(node)
-            cluster.append(node)
-            for neighbor in graph[node]:
-                dfs(neighbor, cluster)
+    if node not in visited:
+        visited.add(node)
+        cluster.append(node)
+        for weight, neighbor in graph[node]:  # Cambia para desempaquetar tupla
+            dfs(neighbor, cluster)
+
 
     for node in graph:
         if node not in visited:
