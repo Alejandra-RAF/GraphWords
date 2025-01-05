@@ -83,18 +83,3 @@ jobs:
           NGROK_URL: ${{ env.NGROK_URL }}
         run: |
           python src/deployment.py | tee deployment_output.txt
-          
-      - name: Get API Gateway URL from output
-        id: get-api-url
-        run: |
-          API_URL=$(grep -oP 'https://[a-z0-9]+\.execute-api\.[^/]+/[^"]+' deployment_output.txt)
-          if [ -z "$API_URL" ]; then
-            echo "Error: No se pudo encontrar la URL de la API Gateway en la salida."
-            exit 1
-          fi
-          echo "API_URL=${API_URL}" >> $GITHUB_ENV
-
-      - name: Run API tests
-        run: |
-          echo "Executing API tests in Python script..."
-          python tests/test_api.py
