@@ -1,6 +1,7 @@
 import boto3
 import json
 import os
+from flask import Flask, request, jsonify
 from create_functions_api import (
     leer_diccionario_desde_s3,
     dijkstra,
@@ -9,6 +10,9 @@ from create_functions_api import (
     Conectividad
 )
 
+# Configuración de Flask
+app = Flask(__name__)
+
 # Configuración de S3 y variables
 LOCALSTACK_URL = os.getenv('LOCALSTACK_URL', 'http://172.17.0.2:4566')
 s3 = boto3.client('s3', endpoint_url=LOCALSTACK_URL)
@@ -16,9 +20,11 @@ s3 = boto3.client('s3', endpoint_url=LOCALSTACK_URL)
 bucket_name = 'graph'
 file_name = "processed_palabras_3.txt"
 
+# --------------------------------------------
+# Funciones de la API
+# --------------------------------------------
 
 def api_dijkstra(params):
-    """Ruta para obtener el camino más corto usando el algoritmo de Dijkstra."""
     if not file_name:
         return {"statusCode": 404, "body": json.dumps({"message": "No se encontró el archivo en S3"})}
 
@@ -44,9 +50,7 @@ def api_dijkstra(params):
     else:
         return {"statusCode": 404, "body": json.dumps({"message": f"No hay un camino entre '{start_word}' y '{target_word}'"})}
 
-
 def api_camino_mas_largo(params):
-    """Ruta para obtener el camino más largo entre nodos."""
     if not file_name:
         return {"statusCode": 404, "body": json.dumps({"message": "No se encontró el archivo en S3"})}
 
@@ -79,9 +83,7 @@ def api_camino_mas_largo(params):
             })
         }
 
-
 def api_nodos_aislados():
-    """Ruta para identificar nodos aislados."""
     _, graph = leer_diccionario_desde_s3(bucket_name, file_name)
     if graph is None:
         return {"statusCode": 500, "body": json.dumps({"message": "El grafo no se pudo construir desde el archivo."})}
@@ -92,9 +94,7 @@ def api_nodos_aislados():
         "body": json.dumps({"nodos_aislados": nodos_aislados, "message": "Nodos aislados identificados"})
     }
 
-
 def api_nodos_alto_grado(params):
-    """Ruta para obtener nodos con alto grado de conectividad."""
     _, graph = leer_diccionario_desde_s3(bucket_name, file_name)
     conectividad = Conectividad(graph)
     umbral = params.get('umbral', 1)
@@ -105,9 +105,7 @@ def api_nodos_alto_grado(params):
         "body": json.dumps({"umbral": umbral, "nodos_alto_grado": nodos_alto_grado, "message": "Nodos con alto grado de conectividad identificados"})
     }
 
-
 def api_nodos_grado_especifico(params):
-    """Ruta para obtener nodos con grado específico."""
     _, graph = leer_diccionario_desde_s3(bucket_name, file_name)
     conectividad = Conectividad(graph)
     grado = params.get('grado', 1)
@@ -118,9 +116,12 @@ def api_nodos_grado_especifico(params):
         "body": json.dumps({"grado": grado, "nodos": nodos, "message": "Nodos con grado específico identificados"})
     }
 
+# --------------------------------------------
+# Función Lambda para AWS
+# --------------------------------------------
 
 def main(event, context):
-    """Punto de entrada de la función Lambda."""
+    """Punto de entrada para la función Lambda."""
     path = event.get("path", "")
     method = event.get("httpMethod", "")
     params = event.get("queryStringParameters", {})
@@ -138,3 +139,42 @@ def main(event, context):
 
     return {"statusCode": 404, "body": json.dumps({"message": "Ruta no encontrada."})}
 
+# --------------------------------------------
+# Rutas para el servidor Flask (modo local)
+# --------------------------------------------
+
+@app.route('/camino_mas_largo', methods=['GET'])
+def flask_camino_mas_largo():
+    params = request.args.to_dict()
+    response = api_camino_mas_largo(params)
+    return jsonify(json.loads(response["body"])), response["statusCode"]
+
+@app.route('/Dijkstra/', methods=['GET'])
+def flask_dijkstra():
+    params = request.args.to_dict()
+    response = api_dijkstra(params)
+    return jsonify(json.loads(response["body"])), response["statusCode"]
+
+@app.route('/nodos_aislados', methods=['GET'])
+def flask_nodos_aislados():
+    response = api_nodos_aislados()
+    return jsonify(json.loads(response["body"])), response["statusCode"]
+
+@app.route('/nodos_alto_grado', methods=['GET'])
+def flask_nodos_alto_grado():
+    params = request.args.to_dict()
+    response = api_nodos_alto_grado(params)
+    return jsonify(json.loads(response["body"])), response["statusCode"]
+
+@app.route('/nodos_grado_especifico', methods=['GET'])
+def flask_nodos_grado_especifico():
+    params = request.args.to_dict()
+    response = api_nodos_grado_especifico(params)
+    return jsonify(json.loads(response["body"])), response["statusCode"]
+
+# --------------------------------------------
+# Ejecutar la aplicación Flask en modo local
+# --------------------------------------------
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
