@@ -52,7 +52,7 @@ jobs:
             sleep 2
           done
 
-      # 8. Instalar Ngrok y sus dependencias
+      # 8. Instalar Ngrok y sus dependencias (opcional)
       - name: Install dependencies
         run: |
           sudo apt-get update
@@ -98,22 +98,8 @@ jobs:
         run: |
           python src/deployment.py | tee deployment_output.txt
 
-      # 13. Capturar la URL de la API Gateway
-      - name: Get API Gateway URL from output
-        id: get-api-url
+      # 13. Ejecutar test_api.py en vez de hacer curl
+      - name: Run API tests in Python
         run: |
-          API_URL=$(grep -oP 'https://[a-z0-9]+\.execute-api\.[^/]+/[^"]+' deployment_output.txt)
-          if [ -z "$API_URL" ]; then
-            echo "Error: No se pudo encontrar la URL de la API Gateway en la salida."
-            exit 1
-          fi
-          echo "API_URL=${API_URL}" >> $GITHUB_ENV
-          echo "API Gateway URL: $API_URL"
-
-      # 14. Realizar solicitud GET /camino_mas_largo
-      - name: Perform API Request
-        run: |
-          echo "Performing GET request to API Gateway URL: $API_URL/camino_mas_largo?start=the&end=and"
-          curl -X GET "$API_URL/camino_mas_largo?start=the&end=and" -o response.json
-          echo "Response:"
-          cat response.json
+          echo "Executing API tests in Python script..."
+          python src/test_api.py
