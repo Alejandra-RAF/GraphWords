@@ -229,8 +229,8 @@ def create_resource_and_method(api_id, root_id, path_part, lambda_arn=None):
         resourceId=resource_id,
         httpMethod='GET',
         type='HTTP_PROXY',
-        integrationHttpMethod='POST',  # Cambiado a GET porque es proxy a un endpoint HTTP
-        uri=f'{ngrok_url}/{path_part}',  # URL final: https://xxxxx.ngrok-free.app/camino_mas_largo
+        integrationHttpMethod='GET',  # Cambiado a GET porque es proxy a un endpoint HTTP
+        uri=f'{ngrok_url}/',  # URL final: https://xxxxx.ngrok-free.app/camino_mas_largo
         requestParameters={
             'integration.request.header.ngrok-skip-browser-warning': "'true'"
         }
