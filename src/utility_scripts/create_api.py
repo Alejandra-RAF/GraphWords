@@ -1,5 +1,6 @@
 import boto3
 import json
+import os
 from create_functions_api import (
     leer_diccionario_desde_s3,
     dijkstra,
