@@ -7,14 +7,16 @@ from create_functions_api import (
     dijkstra,
     camino_mas_largo,
     detectar_nodos_aislados,
-    Conectividad
+    Conectividad,
+    obtener_todos_los_caminos,
+    detectar_clusters
 )
 
 # Configuración de Flask
 app = Flask(__name__)
 
 # Configuración de S3 y variables
-LOCALSTACK_URL = os.getenv('LOCALSTACK_URL', 'http://localhost:4566')
+LOCALSTACK_URL = os.getenv('LOCALSTACK_URL', 'http://172.17.0.2:4566')
 s3 = boto3.client('s3', endpoint_url=LOCALSTACK_URL)
 
 bucket_name = 'graph'
@@ -24,24 +26,10 @@ file_name = "processed_palabras_3.txt"
 # Funciones de la API
 # --------------------------------------------
 
-def verificar_bucket_y_archivo():
-    """ Verifica si el bucket y el archivo existen, y los crea/sube si es necesario. """
-    try:
-        buckets = [bucket['Name'] for bucket in s3.list_buckets().get('Buckets', [])]
-        if bucket_name not in buckets:
-            s3.create_bucket(Bucket=bucket_name)
-            print(f"Bucket '{bucket_name}' creado con éxito.")
-
-        files = [obj['Key'] for obj in s3.list_objects(Bucket=bucket_name).get('Contents', [])]
-        if file_name not in files:
-            s3.upload_file(file_name, bucket_name, file_name)
-            print(f"Archivo '{file_name}' subido al bucket '{bucket_name}' con éxito.")
-    except Exception as e:
-        print(f"Error al verificar bucket y archivo: {e}")
-
-
 def api_dijkstra(params):
-    verificar_bucket_y_archivo()
+    if not file_name:
+        return {"statusCode": 404, "body": json.dumps({"message": "No se encontró el archivo en S3"})}
+
     _, graph = leer_diccionario_desde_s3(bucket_name, file_name)
     start_word = params.get('start')
     target_word = params.get('target')
@@ -64,9 +52,10 @@ def api_dijkstra(params):
     else:
         return {"statusCode": 404, "body": json.dumps({"message": f"No hay un camino entre '{start_word}' y '{target_word}'"})}
 
-
 def api_camino_mas_largo(params):
-    verificar_bucket_y_archivo()
+    if not file_name:
+        return {"statusCode": 404, "body": json.dumps({"message": "No se encontró el archivo en S3"})}
+
     _, graph = leer_diccionario_desde_s3(bucket_name, file_name)
     start = params.get('start')
     end = params.get('end')
@@ -96,9 +85,7 @@ def api_camino_mas_largo(params):
             })
         }
 
-
 def api_nodos_aislados():
-    verificar_bucket_y_archivo()
     _, graph = leer_diccionario_desde_s3(bucket_name, file_name)
     if graph is None:
         return {"statusCode": 500, "body": json.dumps({"message": "El grafo no se pudo construir desde el archivo."})}
@@ -109,9 +96,7 @@ def api_nodos_aislados():
         "body": json.dumps({"nodos_aislados": nodos_aislados, "message": "Nodos aislados identificados"})
     }
 
-
 def api_nodos_alto_grado(params):
-    verificar_bucket_y_archivo()
     _, graph = leer_diccionario_desde_s3(bucket_name, file_name)
     conectividad = Conectividad(graph)
     umbral = params.get('umbral', 1)
@@ -122,9 +107,7 @@ def api_nodos_alto_grado(params):
         "body": json.dumps({"umbral": umbral, "nodos_alto_grado": nodos_alto_grado, "message": "Nodos con alto grado de conectividad identificados"})
     }
 
-
 def api_nodos_grado_especifico(params):
-    verificar_bucket_y_archivo()
     _, graph = leer_diccionario_desde_s3(bucket_name, file_name)
     conectividad = Conectividad(graph)
     grado = params.get('grado', 1)
@@ -133,6 +116,35 @@ def api_nodos_grado_especifico(params):
     return {
         "statusCode": 200,
         "body": json.dumps({"grado": grado, "nodos": nodos, "message": "Nodos con grado específico identificados"})
+    }
+
+def api_todos_los_caminos(params):
+    _, graph = leer_diccionario_desde_s3(bucket_name, file_name)
+    start_word = params.get('start')
+    target_word = params.get('target')
+
+    if not start_word or not target_word:
+        return {"statusCode": 400, "body": json.dumps({"message": "Faltan parámetros 'start' y/o 'target'"})}
+
+    all_paths = obtener_todos_los_caminos(graph, start_word, target_word)
+
+    return {
+        "statusCode": 200,
+        "body": json.dumps({
+            "start": start_word,
+            "target": target_word,
+            "all_paths": all_paths,
+            "message": "Todos los caminos calculados"
+        })
+    }
+
+def api_detectar_clusters():
+    _, graph = leer_diccionario_desde_s3(bucket_name, file_name)
+    clusters = detectar_clusters(graph)
+
+    return {
+        "statusCode": 200,
+        "body": json.dumps({"clusters": clusters, "message": "Clústeres identificados en el grafo"})
     }
 
 # --------------------------------------------
@@ -154,6 +166,10 @@ def main(event, context):
         return api_nodos_alto_grado(params)
     elif path == "/nodos_grado_especifico" and method == "GET":
         return api_nodos_grado_especifico(params)
+    elif path == "/todos_los_caminos" and method == "GET":
+        return api_todos_los_caminos(params)
+    elif path == "/detectar_clusters" and method == "GET":
+        return api_detectar_clusters()
 
     return {"statusCode": 404, "body": json.dumps({"message": "Ruta no encontrada."})}
 
@@ -188,6 +204,17 @@ def flask_nodos_alto_grado():
 def flask_nodos_grado_especifico():
     params = request.args.to_dict()
     response = api_nodos_grado_especifico(params)
+    return jsonify(json.loads(response["body"])), response["statusCode"]
+
+@app.route('/todos_los_caminos', methods=['GET'])
+def flask_todos_los_caminos():
+    params = request.args.to_dict()
+    response = api_todos_los_caminos(params)
+    return jsonify(json.loads(response["body"])), response["statusCode"]
+
+@app.route('/detectar_clusters', methods=['GET'])
+def flask_detectar_clusters():
+    response = api_detectar_clusters()
     return jsonify(json.loads(response["body"])), response["statusCode"]
 
 # --------------------------------------------
