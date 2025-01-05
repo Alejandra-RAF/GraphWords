@@ -104,9 +104,9 @@ def obtener_todos_los_caminos(graph, start, target, path=None):
         return []
 
     paths = []
-    for weight, node in graph[start]:  # Desempaquetamos el peso y el nodo vecino
-        if node not in path:
-            new_paths = obtener_todos_los_caminos(graph, node, target, path)
+    for weight, neighbor in graph[start]:
+        if neighbor not in path:
+            new_paths = obtener_todos_los_caminos(graph, neighbor, target, path)
             for new_path in new_paths:
                 paths.append(new_path)
     return paths
