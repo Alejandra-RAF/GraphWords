@@ -1,1 +1,57 @@
+name: API Test
 
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test-api:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout del código
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Configuración de Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      # 3. Instalar dependencias
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 4. Iniciar LocalStack
+      - name: Start LocalStack
+        run: |
+          docker run -d --name localstack -p 4566:4566 -v /var/run/docker.sock:/var/run/docker.sock localstack/localstack
+          sleep 10  # Esperar que LocalStack se inicie
+
+      # 5. Establecer variables de entorno
+      - name: Set environment variables
+        run: |
+          echo "LOCALSTACK_URL=http://localhost:4566" >> $GITHUB_ENV
+
+      # 6. Ejecutar el servidor Flask (en segundo plano)
+      - name: Run Flask API locally
+        run: |
+          nohup python src/app.py > flask_output.log 2>&1 &
+
+      # 7. Prueba de la API
+      - name: Run API tests
+        run: |
+          python test_api.py
+
+      # 8. Mostrar resultados del log de Flask
+      - name: Show Flask server logs
+        run: |
+          cat flask_output.log
