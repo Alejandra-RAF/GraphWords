@@ -1,6 +1,7 @@
 import boto3
 from flask import Flask, request, jsonify
 import heapq
+from collections import deque
 
 # Obtener el nombre del archivo en S3
 def obtener_nombre_archivo_en_s3(bucket_name, prefix):
@@ -92,23 +93,25 @@ def camino_mas_largo(graph, start=None, end=None):
 
     return max_path, max_distance, start_word, target_word
 
-def obtener_todos_los_caminos(graph, start, target, path=None):
-    if path is None:
-        path = []
-
-    path = path + [start]
-    if start == target:
-        return [path]
-
-    if start not in graph:
-        return []
-
+def obtener_todos_los_caminos(graph, start, target, max_depth=10):
     paths = []
-    for weight, neighbor in graph[start]:
-        if neighbor not in path:
-            new_paths = obtener_todos_los_caminos(graph, neighbor, target, path)
-            for new_path in new_paths:
+    queue = deque([(start, [start])])
+
+    while queue:
+        current_node, path = queue.popleft()
+
+        if len(path) > max_depth:  # Limitar la profundidad
+            continue
+
+        for weight, neighbor in graph[current_node]:
+            if neighbor in path:
+                continue
+            new_path = path + [neighbor]
+            if neighbor == target:
                 paths.append(new_path)
+            else:
+                queue.append((neighbor, new_path))
+
     return paths
 
 
