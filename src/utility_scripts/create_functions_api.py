@@ -92,6 +92,46 @@ def camino_mas_largo(graph, start=None, end=None):
 
     return max_path, max_distance, start_word, target_word
 
+def obtener_todos_los_caminos(graph, start, target, path=None):
+    if path is None:
+        path = []
+
+    path = path + [start]
+    if start == target:
+        return [path]
+
+    if start not in graph:
+        return []
+
+    paths = []
+    for node in graph[start]:
+        if node not in path:
+            new_paths = obtener_todos_los_caminos(graph, node, target, path)
+            for new_path in new_paths:
+                paths.append(new_path)
+    return paths
+
+def detectar_clusters(graph):
+    visited = set()
+    clusters = []
+
+    def dfs(node, cluster):
+        if node not in visited:
+            visited.add(node)
+            cluster.append(node)
+            for neighbor in graph[node]:
+                dfs(neighbor, cluster)
+
+    for node in graph:
+        if node not in visited:
+            cluster = []
+            dfs(node, cluster)
+            if len(cluster) > 1:  # Solo consideramos clusters con más de un nodo
+                clusters.append(cluster)
+
+    return clusters
+
+
 # Función para detectar nodos aislados
 def detectar_nodos_aislados(graph):
     nodos_aislados = []
