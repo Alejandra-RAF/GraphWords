@@ -205,7 +205,7 @@ def get_root_resource_id(api_id):
     return root_id
 
 # Configurar recurso y método GET
-def create_resource_and_method(api_id, root_id, path_part, lambda_arn):
+def create_resource_and_method(api_id, root_id, path_part, lambda_arn=None):
     ngrok_url = get_ngrok_url()
 
     response = apigateway_client.create_resource(
@@ -222,22 +222,22 @@ def create_resource_and_method(api_id, root_id, path_part, lambda_arn):
         httpMethod='GET',
         authorizationType='NONE'
     )
+    
+    # Endpoint de Ngrok + ruta del servicio Flask
     apigateway_client.put_integration(
         restApiId=api_id,
         resourceId=resource_id,
         httpMethod='GET',
         type='HTTP_PROXY',
-        integrationHttpMethod='POST',
-        uri=f'{ngrok_url}/2015-03-31/functions/{lambda_arn}/invocations',
+        integrationHttpMethod='GET',  # Cambiado a GET porque es proxy a un endpoint HTTP
+        uri=f'{ngrok_url}/{path_part}',  # URL final: https://xxxxx.ngrok-free.app/camino_mas_largo
         requestParameters={
             'integration.request.header.ngrok-skip-browser-warning': "'true'"
         }
     )
-
-
-
-    print(f"Método GET configurado para {path_part}. Lambda URI: {ngrok_url}/2015-03-31/functions/{lambda_arn}/invocations")
+    print(f"Método GET configurado para {path_part}. URI final: {ngrok_url}/{path_part}")
     return resource_id
+
 
 # Desplegar API
 def deploy_api(api_id, stage_name):
