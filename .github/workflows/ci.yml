@@ -102,4 +102,4 @@ jobs:
       - name: Run API tests in Python
         run: |
           echo "Executing API tests in Python script..."
-          python src/test_api.py
+          python tests/test_api.py
