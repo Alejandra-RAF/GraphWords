@@ -11,10 +11,10 @@ def test_api():
 
     endpoints_with_payload = [
         {
-            "endpoint": "/camino_mas_largo",
+            "endpoint": "test/camino_mas_largo",
             "payload": {
                 "path": "/camino_mas_largo",
-                "httpMethod": "GET",
+                "httpMethod": "ANY",
                 "queryStringParameters": {
                     "start": "the",
                     "end": "for"
@@ -22,10 +22,10 @@ def test_api():
             }
         },
         {
-            "endpoint": "/Dijkstra/",
+            "endpoint": "test/Dijkstra/",
             "payload": {
                 "path": "/Dijkstra/",
-                "httpMethod": "GET",
+                "httpMethod": "ANY",
                 "queryStringParameters": {
                     "start": "the",
                     "target": "for"
@@ -33,28 +33,28 @@ def test_api():
             }
         },
         {
-            "endpoint": "/nodos_aislados",
+            "endpoint": "test/nodos_aislados",
             "payload": {
                 "path": "/nodos_aislados",
-                "httpMethod": "GET",
+                "httpMethod": "ANY",
                 "queryStringParameters": {}
             }
         },
         {
-            "endpoint": "/nodos_alto_grado",
+            "endpoint": "test/nodos_alto_grado",
             "payload": {
                 "path": "/nodos_alto_grado",
-                "httpMethod": "GET",
+                "httpMethod": "ANY",
                 "queryStringParameters": {
                     "umbral": "3"
                 }
             }
         },
         {
-            "endpoint": "/nodos_grado_especifico",
+            "endpoint": "test/nodos_grado_especifico",
             "payload": {
                 "path": "/nodos_grado_especifico",
-                "httpMethod": "GET",
+                "httpMethod": "ANY",
                 "queryStringParameters": {
                     "grado": "2"
                 }
