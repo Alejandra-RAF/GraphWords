@@ -120,7 +120,6 @@ def api_nodos_grado_especifico(params):
 
 def main(event, context):
     """Punto de entrada de la función Lambda."""
-    print(f"Prueba de importación de 'os': {os}")
     path = event.get("path", "")
     method = event.get("httpMethod", "")
     params = event.get("queryStringParameters", {})
