@@ -14,7 +14,7 @@ from create_functions_api import (
 app = Flask(__name__)
 
 # Configuración de S3 y variables
-LOCALSTACK_URL = os.getenv('LOCALSTACK_URL', 'http://172.17.0.2:4566')
+LOCALSTACK_URL = os.getenv('LOCALSTACK_URL', 'http://localhost:4566')
 s3 = boto3.client('s3', endpoint_url=LOCALSTACK_URL)
 
 bucket_name = 'graph'
@@ -24,10 +24,24 @@ file_name = "processed_palabras_3.txt"
 # Funciones de la API
 # --------------------------------------------
 
-def api_dijkstra(params):
-    if not file_name:
-        return {"statusCode": 404, "body": json.dumps({"message": "No se encontró el archivo en S3"})}
+def verificar_bucket_y_archivo():
+    """ Verifica si el bucket y el archivo existen, y los crea/sube si es necesario. """
+    try:
+        buckets = [bucket['Name'] for bucket in s3.list_buckets().get('Buckets', [])]
+        if bucket_name not in buckets:
+            s3.create_bucket(Bucket=bucket_name)
+            print(f"Bucket '{bucket_name}' creado con éxito.")
 
+        files = [obj['Key'] for obj in s3.list_objects(Bucket=bucket_name).get('Contents', [])]
+        if file_name not in files:
+            s3.upload_file(file_name, bucket_name, file_name)
+            print(f"Archivo '{file_name}' subido al bucket '{bucket_name}' con éxito.")
+    except Exception as e:
+        print(f"Error al verificar bucket y archivo: {e}")
+
+
+def api_dijkstra(params):
+    verificar_bucket_y_archivo()
     _, graph = leer_diccionario_desde_s3(bucket_name, file_name)
     start_word = params.get('start')
     target_word = params.get('target')
@@ -50,10 +64,9 @@ def api_dijkstra(params):
     else:
         return {"statusCode": 404, "body": json.dumps({"message": f"No hay un camino entre '{start_word}' y '{target_word}'"})}
 
-def api_camino_mas_largo(params):
-    if not file_name:
-        return {"statusCode": 404, "body": json.dumps({"message": "No se encontró el archivo en S3"})}
 
+def api_camino_mas_largo(params):
+    verificar_bucket_y_archivo()
     _, graph = leer_diccionario_desde_s3(bucket_name, file_name)
     start = params.get('start')
     end = params.get('end')
@@ -83,7 +96,9 @@ def api_camino_mas_largo(params):
             })
         }
 
+
 def api_nodos_aislados():
+    verificar_bucket_y_archivo()
     _, graph = leer_diccionario_desde_s3(bucket_name, file_name)
     if graph is None:
         return {"statusCode": 500, "body": json.dumps({"message": "El grafo no se pudo construir desde el archivo."})}
@@ -94,7 +109,9 @@ def api_nodos_aislados():
         "body": json.dumps({"nodos_aislados": nodos_aislados, "message": "Nodos aislados identificados"})
     }
 
+
 def api_nodos_alto_grado(params):
+    verificar_bucket_y_archivo()
     _, graph = leer_diccionario_desde_s3(bucket_name, file_name)
     conectividad = Conectividad(graph)
     umbral = params.get('umbral', 1)
@@ -105,7 +122,9 @@ def api_nodos_alto_grado(params):
         "body": json.dumps({"umbral": umbral, "nodos_alto_grado": nodos_alto_grado, "message": "Nodos con alto grado de conectividad identificados"})
     }
 
+
 def api_nodos_grado_especifico(params):
+    verificar_bucket_y_archivo()
     _, graph = leer_diccionario_desde_s3(bucket_name, file_name)
     conectividad = Conectividad(graph)
     grado = params.get('grado', 1)
@@ -121,7 +140,6 @@ def api_nodos_grado_especifico(params):
 # --------------------------------------------
 
 def main(event, context):
-    """Punto de entrada para la función Lambda."""
     path = event.get("path", "")
     method = event.get("httpMethod", "")
     params = event.get("queryStringParameters", {})
