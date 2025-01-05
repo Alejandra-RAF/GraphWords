@@ -292,60 +292,80 @@ def main():
     # Invocar Lambdas creadas en LocalStack
     # Invocar Lambdas creadas en LocalStack
     lambdas_to_invoke = [
-        {"name": "LambdaScriptDatalake", "payload": {"action": "process_datalake"}},
-        {"name": "LambdaScriptDatamart", "payload": {"action": "process_datamart"}},
-        {"name": "LambdaScriptGraph", "payload": {"action": "process_graph"}},
-        {
-            "name": "LambdaScriptApi",
-            "payload": {
-                "path": "/camino_mas_largo",
-                "httpMethod": "GET",
-                "queryStringParameters": {
-                    "start": "the",
-                    "end": "for"
-                }
-            }
-        },
-        {
-            "name": "LambdaScriptApi",
-            "payload": {
-                "path": "/Dijkstra/",
-                "httpMethod": "GET",
-                "queryStringParameters": {
-                    "start": "the",
-                    "target": "for"
-                }
-            }
-        },
-        {
-            "name": "LambdaScriptApi",
-            "payload": {
-                "path": "/nodos_aislados",
-                "httpMethod": "GET",
-                "queryStringParameters": {}
-            }
-        },
-        {
-            "name": "LambdaScriptApi",
-            "payload": {
-                "path": "/nodos_alto_grado",
-                "httpMethod": "GET",
-                "queryStringParameters": {
-                    "umbral": "3"
-                }
-            }
-        },
-        {
-            "name": "LambdaScriptApi",
-            "payload": {
-                "path": "/nodos_grado_especifico",
-                "httpMethod": "GET",
-                "queryStringParameters": {
-                    "grado": "2"
-                }
+    {"name": "LambdaScriptDatalake", "payload": {"action": "process_datalake"}},
+    {"name": "LambdaScriptDatamart", "payload": {"action": "process_datamart"}},
+    {"name": "LambdaScriptGraph", "payload": {"action": "process_graph"}},
+    {
+        "name": "LambdaScriptApi",
+        "payload": {
+            "path": "/camino_mas_largo",
+            "httpMethod": "GET",
+            "queryStringParameters": {
+                "start": "the",
+                "end": "for"
             }
         }
+    },
+    {
+        "name": "LambdaScriptApi",
+        "payload": {
+            "path": "/Dijkstra/",
+            "httpMethod": "GET",
+            "queryStringParameters": {
+                "start": "the",
+                "target": "for"
+            }
+        }
+    },
+    {
+        "name": "LambdaScriptApi",
+        "payload": {
+            "path": "/nodos_aislados",
+            "httpMethod": "GET",
+            "queryStringParameters": {}
+        }
+    },
+    {
+        "name": "LambdaScriptApi",
+        "payload": {
+            "path": "/nodos_alto_grado",
+            "httpMethod": "GET",
+            "queryStringParameters": {
+                "umbral": "3"
+            }
+        }
+    },
+    {
+        "name": "LambdaScriptApi",
+        "payload": {
+            "path": "/nodos_grado_especifico",
+            "httpMethod": "GET",
+            "queryStringParameters": {
+                "grado": "2"
+            }
+        }
+    },
+    {
+        "name": "LambdaScriptApi",
+        "payload": {
+            "path": "/todos_los_caminos",
+            "httpMethod": "GET",
+            "queryStringParameters": {
+                "start": "the",
+                "target": "for"
+            }
+        }
+    },
+    {
+        "name": "LambdaScriptApi",
+        "payload": {
+            "path": "/detectar_clusters",
+            "httpMethod": "GET",
+            "queryStringParameters": {}
+        }
+    }
     ]
+
 
     
     for lambda_config in lambdas_to_invoke:
