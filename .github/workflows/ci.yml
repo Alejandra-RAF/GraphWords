@@ -28,11 +28,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install boto3 Flask pytest
-          
+
   deploy:
     name: "Desplegar infraestructura en AWS"
     runs-on: ubuntu-22.04
-    if: github.ref == 'refs/heads/main'
+    needs: setup  # Se asegura de que el job `setup` se ejecute antes.
+    if: github.ref == 'refs/heads/notmain'  # Ajustado a la rama actual.
 
     steps:
       - name: "Checkout del repositorio"
@@ -43,7 +44,7 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: "us-east-1"
 
       - name: "Desplegar aplicación en AWS EC2"
