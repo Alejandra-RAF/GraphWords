@@ -1,58 +1,88 @@
-name: Hybrid Deployment (AWS + LocalStack)
+name: CI/CD Pipeline
 
+# Ejecutar en pushes a main y develop y disparos manuales
 on:
   push:
     branches:
       - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
   workflow_dispatch:
 
 jobs:
-  deployment:
+  setup:
+    name: "Preparar entorno de trabajo"
     runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
 
-      - name: Set up Python
+    steps:
+      - name: "Checkout del repositorio"
+        uses: actions/checkout@v4
+
+      - name: "Configurar Python 3.9"
         uses: actions/setup-python@v4
         with:
           python-version: "3.9"
 
-      - name: Install dependencies
+      - name: "Instalar dependencias"
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install boto3 Flask pytest
 
-      - name: Start LocalStack
+  tests:
+    name: "Ejecutar pruebas unitarias"
+    runs-on: ubuntu-22.04
+    needs: setup
+
+    steps:
+      - name: "Checkout del repositorio"
+        uses: actions/checkout@v4
+
+      - name: "Ejecutar pruebas"
         run: |
-          docker run -d --name localstack_main -p 4566:4566 -p 4510-4559:4510-4559 -v /var/run/docker.sock:/var/run/docker.sock localstack/localstack
+          pytest --maxfail=1 --disable-warnings
 
-      - name: Obtener la IP del contenedor de LocalStack
-        id: get-localstack-ip
+  deploy:
+    name: "Desplegar infraestructura en AWS"
+    runs-on: ubuntu-22.04
+    needs: tests
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: "Checkout del repositorio"
+        uses: actions/checkout@v4
+
+      - name: "Configurar credenciales AWS"
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws_session_token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: "us-east-1"
+
+      - name: "Desplegar aplicación en AWS EC2"
         run: |
-          LOCALSTACK_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' localstack_main)
-          echo "IP de LocalStack obtenida: $LOCALSTACK_IP"
-          echo "LOCALSTACK_URL=http://${LOCALSTACK_IP}:4566" >> $GITHUB_ENV
+          python src/deployment.py
 
-      - name: Debug LOCALSTACK_URL
+  performance:
+    name: "Pruebas de rendimiento"
+    runs-on: ubuntu-22.04
+    needs: deploy
+    steps:
+      - name: "Clonar repositorio"
+        uses: actions/checkout@v4
+
+      - name: "Configurar Locust para pruebas de carga"
         run: |
-          echo "URL de LocalStack: $LOCALSTACK_URL"
+          pip install locust
+          locust -f src/locustfile.py --headless -u 100 -r 10 -t 1m
 
-      - name: Wait for LocalStack
-        run: |
-          until curl -s $LOCALSTACK_URL/_localstack/init | grep -q '"READY": true'; do
-            echo "Waiting for LocalStack to be ready..."
-            sleep 2
-          done
-
-      - name: Deploy to AWS + LocalStack
+      - name: "Subir resultados de rendimiento a S3"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
-          AWS_DEFAULT_REGION: us-east-1
-          LOCALSTACK_URL: ${{ env.LOCALSTACK_URL }}
         run: |
-          echo "Usando LocalStack en $LOCALSTACK_URL"
-          curl -s $LOCALSTACK_URL || echo "Cannot reach LocalStack at $LOCALSTACK_URL"
-          python src/deployment.py
+          aws s3 cp locust_result.html s3://performance-reports-bucket/locust_result.html
