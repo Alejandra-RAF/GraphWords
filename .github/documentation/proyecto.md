@@ -9,21 +9,50 @@ flowchart TD
         D -->|ALB - Load Balancer| E[Cliente - Consulta API]
     end
 
-    subgraph GitHub Actions CI/CD
-        X[Push o Pull Request en main/desarrollo] --> Y[Ejecutar Job de Setup]
-        Y --> Z[Ejecutar Tests con Pytest]
-        Z --> W[Desplegar Infraestructura AWS]
-        W --> Q[Pruebas de rendimiento Locust]
+    subgraph Endpoints API
+        Dijkstra[/Dijkstra/?start&target&tipo=3] --> D
+        CaminoMasLargo[/camino_mas_largo/?start&end&tipo=3] --> D
+        NodosAislados[/nodos_aislados/?tipo=3] --> D
+        NodosAltoGrado[/nodos_alto_grado/?umbral&tipo=3] --> D
+        NodosGradoEspecifico[/nodos_grado_especifico/?grado&tipo=3] --> D
+        TodosLosCaminos[/todos_los_caminos/?start&target&tipo=3] --> D
+        DetectarClusters[/detectar_clusters/?tipo=3] --> D
     end
-
-    E -->|Consulta GET /Dijkstra| D
-    E -->|Consulta GET /camino_mas_largo| D
-    E -->|Consulta GET /nodos_aislados| D
-    E -->|Consulta GET /detectar_clusters| D
 ```
 
 ## Descripción General
 Este proyecto implementa una arquitectura distribuida en AWS para gestionar y realizar operaciones sobre grafos generados a partir de conjuntos de palabras.
+
+## Endpoints Disponibles
+Los siguientes endpoints están disponibles en la API Flask:
+- **/Dijkstra/**: Camino más corto entre dos nodos.
+  ```bash
+  GET /Dijkstra/?start=palabra1&target=palabra2&tipo=3
+  ```
+- **/camino_mas_largo**: Camino más largo entre dos nodos.
+  ```bash
+  GET /camino_mas_largo/?start=palabra1&end=palabra2&tipo=4
+  ```
+- **/nodos_aislados**: Nodos sin conexiones en el grafo.
+  ```bash
+  GET /nodos_aislados/?tipo=3
+  ```
+- **/nodos_alto_grado**: Nodos con un alto grado de conectividad.
+  ```bash
+  GET /nodos_alto_grado/?umbral=2&tipo=3
+  ```
+- **/nodos_grado_especifico**: Nodos con un grado de conectividad específico.
+  ```bash
+  GET /nodos_grado_especifico/?grado=3&tipo=3
+  ```
+- **/todos_los_caminos**: Todos los caminos entre dos nodos.
+  ```bash
+  GET /todos_los_caminos/?start=palabra1&target=palabra2&tipo=3
+  ```
+- **/detectar_clusters**: Subgrafos densamente conectados (clusters).
+  ```bash
+  GET /detectar_clusters/?tipo=5
+  ```
 
 ## Flujo de Trabajo de CI/CD
 1. **Evento de activación:**
@@ -142,8 +171,5 @@ jobs:
    python src/create_api.py
    ```
 
-## Diagrama de Arquitectura
-El diagrama anterior muestra la arquitectura general del proyecto, donde las consultas a la API Flask se realizan mediante un balanceador de carga (ALB) y los datos se almacenan y procesan en buckets S3.
-
 ---
-Este archivo `README.md` detalla el flujo de CI/CD, el uso de secretos y los comandos para ejecutar los scripts de manera local y remota.
+Este archivo `README.md` detalla el flujo de CI/CD, el uso de secretos y los endpoints de la API Flask para consultar grafos.
