@@ -26,7 +26,7 @@ jobs:
       - name: "Instalar dependencias"
         run: |
           python -m pip install --upgrade pip
-          pip install boto3==1.26.60 Flask==2.2.5 pytest==7.4.0 unittest-xml-reporting==3.0.4 flake8==6.0.0 requests==2.31.0
+          pip install boto3 Flask pytest awscli
 
       - name: "Configurar credenciales AWS"
         uses: aws-actions/configure-aws-credentials@v2
@@ -37,8 +37,11 @@ jobs:
           aws-region: "us-east-1"
 
       - name: "Desplegar aplicación en AWS EC2"
+        id: deploy_app
         run: |
-          python src/deployment.py
+          python src/deployment.py | tee deployment_output.txt
+          LB_URL=$(grep -oP 'http://\S+' deployment_output.txt | head -n 1)
+          echo "LB_URL=$LB_URL" >> $GITHUB_ENV
 
   performance:
     name: "Pruebas de rendimiento"
@@ -50,9 +53,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: "Configurar Locust para pruebas de carga"
+        env:
+          LB_URL: ${{ env.LB_URL }}
         run: |
           pip install locust
-          locust -f src/locustfile.py --headless -u 100 -r 10 -t 1m
+          echo "Prueba de carga en: $LB_URL"
+          locust -f src/locustfile.py --headless -u 100 -r 10 -t 1m --host $LB_URL
 
       - name: "Subir resultados de rendimiento a S3"
         env:
