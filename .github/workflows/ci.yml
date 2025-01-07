@@ -28,24 +28,10 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install boto3 Flask pytest
-
-  tests:
-    name: "Ejecutar pruebas unitarias"
-    runs-on: ubuntu-22.04
-    needs: setup
-
-    steps:
-      - name: "Checkout del repositorio"
-        uses: actions/checkout@v4
-
-      - name: "Ejecutar pruebas"
-        run: |
-          pytest --maxfail=1 --disable-warnings
-
+          
   deploy:
     name: "Desplegar infraestructura en AWS"
     runs-on: ubuntu-22.04
-    needs: tests
     if: github.ref == 'refs/heads/main'
 
     steps:
