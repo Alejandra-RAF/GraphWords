@@ -40,8 +40,9 @@ jobs:
         id: deploy_app
         run: |
           python src/deployment.py | tee deployment_output.txt
-          LB_URL=$(grep -oP 'http://\S+' deployment_output.txt | head -n 1)
-          echo "LB_URL=$LB_URL" >> $GITHUB_ENV
+          LB_URL=$(grep -oP 'http://\S+' deployment_output.txt | tail -n 1)
+          echo "LB_URL=$LB_URL" >> $GITHUB_ENV 
+
 
   performance:
     name: "Pruebas de rendimiento"
@@ -49,6 +50,9 @@ jobs:
     needs: setup_deploy
 
     steps:
+      - name: "Esperando 20 segundos a terminar de desplegar la infraestructura AWS..."
+        run: sleep 20 
+        
       - name: "Clonar repositorio"
         uses: actions/checkout@v4
 
