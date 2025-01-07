@@ -1,45 +1,37 @@
 import boto3
 import json
 from flask import Flask, request, jsonify
-import os
-from werkzeug.datastructures import ImmutableMultiDict
 from create_functions_api import (
-    obtener_nombre_archivo_en_s3,
     leer_diccionario_desde_s3,
     dijkstra,
     camino_mas_largo,
     detectar_nodos_aislados,
-    Conectividad
+    Conectividad,
+    obtener_todos_los_caminos,
+    detectar_clusters
 )
 
-# Inicializar aplicación Flask
 app = Flask(__name__)
 
-LOCALSTACK_URL = os.getenv('LOCALSTACK_URL', 'http://localhost:4566')
-print(f"Conectando a LocalStack en {LOCALSTACK_URL}")
+s3 = boto3.client('s3')  
+bucket_input = "graph-generated-2025"
 
-# Configuración S3
-s3 = boto3.client('s3', endpoint_url=LOCALSTACK_URL)  # Cambiar si no usas LocalStack
-bucket_name = 'datamart'
-
-
-def s3_file_exists(bucket_name, prefix=""):
-    """Verifica si hay archivos disponibles en el bucket con un prefijo."""
-    file_key = obtener_nombre_archivo_en_s3(bucket_name, prefix)
-    if not file_key:
-        return None
-    return file_key
-
+# Función para seleccionar el archivo según el parámetro, por defecto "3"
+def seleccionar_archivo(tipo):
+    archivos = {
+        "3": "processed_palabras_3.txt",
+        "4": "processed_palabras_4.txt",
+        "5": "processed_palabras_5.txt"
+    }
+    return archivos.get(tipo, "processed_palabras_3.txt")  # Si no se encuentra el tipo, se devuelve "3" por defecto.
 
 @app.route('/Dijkstra/', methods=['GET'])
 def api_dijkstra():
-    """Ruta para obtener el camino más corto usando el algoritmo de Dijkstra."""
     try:
-        file_key = s3_file_exists(bucket_name)
-        if not file_key:
-            return jsonify({"message": "No se encontró el archivo en S3"}), 404
+        tipo = request.args.get('tipo', "3")  # Si no se envía tipo, se asigna "3" por defecto.
+        file_name = seleccionar_archivo(tipo)
 
-        _, graph = leer_diccionario_desde_s3(bucket_name, file_key)
+        _, graph = leer_diccionario_desde_s3(bucket_input, file_name)
 
         start_word = request.args.get('start')
         target_word = request.args.get('target')
@@ -62,16 +54,14 @@ def api_dijkstra():
     except Exception as e:
         return jsonify({"message": f"Error en Dijkstra: {str(e)}"}), 500
 
-
+# Otros endpoints también usan "tipo" con "3" como valor predeterminado:
 @app.route('/camino_mas_largo', methods=['GET'])
 def api_camino_mas_largo():
-    """Ruta para obtener el camino más largo entre nodos."""
     try:
-        file_key = s3_file_exists(bucket_name)
-        if not file_key:
-            return jsonify({"message": "No se encontró el archivo en S3"}), 404
+        tipo = request.args.get('tipo', "3")
+        file_name = seleccionar_archivo(tipo)
 
-        _, graph = leer_diccionario_desde_s3(bucket_name, file_key)
+        _, graph = leer_diccionario_desde_s3(bucket_input, file_name)
 
         start = request.args.get('start')
         end = request.args.get('end')
@@ -97,16 +87,13 @@ def api_camino_mas_largo():
     except Exception as e:
         return jsonify({"message": f"Error en camino más largo: {str(e)}"}), 500
 
-
 @app.route('/nodos_aislados', methods=['GET'])
 def api_nodos_aislados():
-    """Ruta para identificar nodos aislados."""
     try:
-        file_key = s3_file_exists(bucket_name)
-        if not file_key:
-            return jsonify({"message": "No se encontró el archivo en S3"}), 404
+        tipo = request.args.get('tipo', "3")
+        file_name = seleccionar_archivo(tipo)
 
-        _, graph = leer_diccionario_desde_s3(bucket_name, file_key)
+        _, graph = leer_diccionario_desde_s3(bucket_input, file_name)
         nodos_aislados = detectar_nodos_aislados(graph)
 
         return jsonify({
@@ -116,16 +103,13 @@ def api_nodos_aislados():
     except Exception as e:
         return jsonify({"message": f"Error en nodos aislados: {str(e)}"}), 500
 
-
 @app.route('/nodos_alto_grado', methods=['GET'])
 def api_nodos_alto_grado():
-    """Ruta para obtener nodos con alto grado de conectividad."""
     try:
-        file_key = s3_file_exists(bucket_name)
-        if not file_key:
-            return jsonify({"message": "No se encontró el archivo en S3"}), 404
+        tipo = request.args.get('tipo', "3")
+        file_name = seleccionar_archivo(tipo)
 
-        _, graph = leer_diccionario_desde_s3(bucket_name, file_key)
+        _, graph = leer_diccionario_desde_s3(bucket_input, file_name)
         conectividad = Conectividad(graph)
 
         umbral = request.args.get('umbral', default=1, type=int)
@@ -139,16 +123,13 @@ def api_nodos_alto_grado():
     except Exception as e:
         return jsonify({"message": f"Error en nodos alto grado: {str(e)}"}), 500
 
-
 @app.route('/nodos_grado_especifico', methods=['GET'])
 def api_nodos_grado_especifico():
-    """Ruta para obtener nodos con grado específico."""
     try:
-        file_key = s3_file_exists(bucket_name)
-        if not file_key:
-            return jsonify({"message": "No se encontró el archivo en S3"}), 404
+        tipo = request.args.get('tipo', "3")
+        file_name = seleccionar_archivo(tipo)
 
-        _, graph = leer_diccionario_desde_s3(bucket_name, file_key)
+        _, graph = leer_diccionario_desde_s3(bucket_input, file_name)
         conectividad = Conectividad(graph)
 
         grado = request.args.get('grado', default=1, type=int)
@@ -162,29 +143,45 @@ def api_nodos_grado_especifico():
     except Exception as e:
         return jsonify({"message": f"Error en nodos grado específico: {str(e)}"}), 500
 
+@app.route('/todos_los_caminos', methods=['GET'])
+def api_todos_los_caminos():
+    try:
+        tipo = request.args.get('tipo', "3")
+        file_name = seleccionar_archivo(tipo)
 
-def main(event, context):
-    """Punto de entrada de Lambda."""
-    print(f"Prueba de importación de 'os': {os}")
-    print("Evento recibido por Lambda:", json.dumps(event, indent=2))  # Imprime el evento completo
-    
-    with app.test_request_context(
-        path=event.get('path', '/'),
-        method=event.get('httpMethod', 'GET'),
-        query_string=ImmutableMultiDict(event.get('queryStringParameters') or {})
-    ):
-        response = app.full_dispatch_request()
-        print("Respuesta generada por Flask:", {
-            "statusCode": response.status_code,
-            "headers": dict(response.headers),
-            "body": response.get_data(as_text=True)
-        })  # Imprime la respuesta generada
-        return {
-            "statusCode": response.status_code,
-            "headers": dict(response.headers),
-            "body": response.get_data(as_text=True)
-        }
+        _, graph = leer_diccionario_desde_s3(bucket_input, file_name)
+        start_word = request.args.get('start')
+        target_word = request.args.get('target')
 
+        if not start_word or not target_word:
+            return jsonify({"message": "Faltan parámetros 'start' y/o 'target'"}), 400
 
-if __name__ == '__main__':
-    app.run(debug=True)
+        all_paths = obtener_todos_los_caminos(graph, start_word, target_word)
+
+        return jsonify({
+            "start": start_word,
+            "target": target_word,
+            "all_paths": all_paths,
+            "message": "Todos los caminos calculados"
+        }), 200
+    except Exception as e:
+        return jsonify({"message": f"Error en todos los caminos: {str(e)}"}), 500
+
+@app.route('/detectar_clusters', methods=['GET'])
+def api_detectar_clusters():
+    try:
+        tipo = request.args.get('tipo', "3")
+        file_name = seleccionar_archivo(tipo)
+
+        _, graph = leer_diccionario_desde_s3(bucket_input, file_name)
+        clusters = detectar_clusters(graph)
+
+        return jsonify({
+            "clusters": clusters,
+            "message": "Clústeres identificados en el grafo"
+        }), 200
+    except Exception as e:
+        return jsonify({"message": f"Error en detección de clústeres: {str(e)}"}), 500
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)

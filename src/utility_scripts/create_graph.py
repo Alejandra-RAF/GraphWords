@@ -1,30 +1,20 @@
 import boto3
 import os
 
-LOCALSTACK_URL = os.getenv('LOCALSTACK_URL', 'http://localhost:4566')
-print(f"Conectando a LocalStack en {LOCALSTACK_URL}")
+# Crear el cliente S3
+s3 = boto3.client('s3')  
+bucket_input = "datamart-generated-2025"  
+bucket_datamart = "graph-generated-2025"
 
-# Configuración de los buckets y el cliente S3
-s3 = boto3.client('s3', endpoint_url=LOCALSTACK_URL)
-bucket_input = "datamart"  
-bucket_output = "graph"  
-
-
-def bucket_exists(bucket_name):
-    existing_buckets = s3.list_buckets()
-    for bucket in existing_buckets.get('Buckets', []):
-        if bucket['Name'] == bucket_name:
-            return True
-    return False
-
-def create_bucket_if_not_exists(bucket_name):
-    if not bucket_exists(bucket_name):
+def create_bucket(bucket_name):
+    try:
+        print(f"Creando el bucket {bucket_name}...")
         s3.create_bucket(Bucket=bucket_name)
-
-def get_txt_files(bucket_name):
-    objects = s3.list_objects_v2(Bucket=bucket_name)
-    return [obj['Key'] for obj in objects.get('Contents', []) if obj['Key'].endswith('.txt')]
-
+        print(f"Bucket {bucket_name} creado correctamente.")
+    except s3.exceptions.BucketAlreadyExists:
+        print(f"El bucket {bucket_name} ya existe.")
+    except Exception as e:
+        print(f"Error al crear el bucket: {e}")
 
 def leer_diccionario_desde_s3(bucket_name, input_key):
     response = s3.get_object(Bucket=bucket_name, Key=input_key)
@@ -34,15 +24,12 @@ def leer_diccionario_desde_s3(bucket_name, input_key):
         palabra, peso = line.split(": ")
         diccionario[palabra] = int(peso)
     return diccionario
-    
-
 
 def difieren_en_una_letra(palabra1, palabra2):
     if len(palabra1) != len(palabra2):
         return False
     diferencia = sum(1 for a, b in zip(palabra1, palabra2) if a != b)
     return diferencia == 1
-
 
 def lista_palabras_pesos(diccionario):
     lista_pesos = []
@@ -58,32 +45,32 @@ def lista_palabras_pesos(diccionario):
                 lista_pesos.append((palabra1, palabra2, peso_conexion))
     return lista_pesos
 
-
 def guardar_en_s3(bucket_name, key, lista_pesos):
     contenido = "\n".join([f"{palabra1} {palabra2} {peso}" for palabra1, palabra2, peso in lista_pesos])
     s3.put_object(Bucket=bucket_name, Key=key, Body=contenido)
-       
-def process_files():
-    txt_files = get_txt_files(bucket_input)
-    files_with_3 = [file for file in txt_files if '3' in file]
 
+def process_specific_files():
+    specific_files = ["palabras_3.txt", "palabras_4.txt", "palabras_5.txt"]
 
-    for file in files_with_3:
+    for file in specific_files:
         print(f"Procesando archivo específico: {file}")
-        diccionario = leer_diccionario_desde_s3(bucket_input, file)
-        lista_pesos = lista_palabras_pesos(diccionario)
-        destination_key = f"processed_{os.path.basename(file)}"
-        guardar_en_s3(bucket_output, destination_key, lista_pesos)
+        try:
+            diccionario = leer_diccionario_desde_s3(bucket_input, file)
+            lista_pesos = lista_palabras_pesos(diccionario)
+            destination_key = f"processed_{os.path.basename(file)}"
+            guardar_en_s3(bucket_datamart, destination_key, lista_pesos)
+            print(f"Archivo {file} procesado y guardado como {destination_key} en {bucket_datamart}.")
+        except Exception as e:
+            print(f"Error al procesar {file}: {e}")
 
-
-
-def main(event, context):
+def main():
     try:
-        print("Ejecución de Lambda iniciada...")
-        create_bucket_if_not_exists(bucket_output)
-        process_files()
-        print("Ejecución de Lambda finalizada.")
-        return {"statusCode": 200, "body": "Procesamiento completado y resultados subidos a S3"}
+        print("Inicio del procesamiento...")
+        create_bucket(bucket_datamart)  # Crear el bucket si no existe
+        process_specific_files()  # Procesar los archivos específicos
+        print("Procesamiento completado y resultados subidos a S3.")
     except Exception as e:
-        print(f"Error en la ejecución de Lambda: {e}")
-        return {"statusCode": 500, "body": f"Error: {e}"}
+        print(f"Error en la ejecución: {e}")
+
+if __name__ == "__main__":
+    main()

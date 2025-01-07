@@ -1,290 +1,178 @@
 import boto3
-import subprocess
-import os
-import time
-import json
 
-LOCALSTACK_URL = os.getenv('LOCALSTACK_URL', 'http://localhost:4566')
-print(f"Conectando a LocalStack en {LOCALSTACK_URL}")
+AWS_REGION = "us-east-1"
+BUCKET_NAME = "deployments-bucket456"
+FILE_PATH_DATALEKE = "utility_scripts/create_datalake.py"
+FILE_PATH_DATAMART = "utility_scripts/create_datamart.py"
+FILE_PATH_GRAPH = "utility_scripts/create_graph.py"
+FILE_PATH_API = "utility_scripts/create_api.py"
+FILE_PATH_FUNCTIONS_API = "utility_scripts/create_functions_api.py"
 
-# Crear clientes para AWS y LocalStack
-ec2_client = boto3.client('ec2')
-elb_client = boto3.client('elbv2')
-autoscaling_client = boto3.client('autoscaling')
-s3 = boto3.client("s3")
-lambda_client = boto3.client('lambda', endpoint_url=LOCALSTACK_URL)  # LocalStack
-apigateway_client = boto3.client('apigateway')  # Cliente para API Gateway
+AMI_ID = "ami-0fff1b9a61dec8a5f"
+INSTANCE_TYPE = "t2.micro"
+KEY_NAME = "vockey"
+ROLE_NAME = "LabInstanceProfile"
 
-# Crear VPC
+s3 = boto3.client('s3', region_name=AWS_REGION)
+ec2 = boto3.resource('ec2', region_name=AWS_REGION)
+elbv2_client = boto3.client('elbv2', region_name=AWS_REGION)
+
+def upload_script_to_s3():
+    print(f"Subiendo scripts al bucket {BUCKET_NAME}...")
+    s3.create_bucket(Bucket=BUCKET_NAME)
+    files = {
+        "create_datalake.py": FILE_PATH_DATALEKE,
+        "create_datamart.py": FILE_PATH_DATAMART,
+        "create_graph.py": FILE_PATH_GRAPH,
+        "create_api.py": FILE_PATH_API,
+        "create_functions_api.py": FILE_PATH_FUNCTIONS_API,
+    }
+    for key, path in files.items():
+        s3.upload_file(path, BUCKET_NAME, key)
+    print("Archivos subidos correctamente.")
+
 def create_vpc():
-    response = ec2_client.create_vpc(CidrBlock='10.0.0.0/16')
-    vpc_id = response['Vpc']['VpcId']
-    ec2_client.modify_vpc_attribute(VpcId=vpc_id, EnableDnsSupport={'Value': True})
-    ec2_client.modify_vpc_attribute(VpcId=vpc_id, EnableDnsHostnames={'Value': True})
-    print(f'VPC creada con ID: {vpc_id}')
-    return vpc_id
+    print("Creando VPC y recursos de red...")
+    vpc = ec2.create_vpc(CidrBlock="10.0.0.0/16")
+    vpc.wait_until_available()
+    vpc.create_tags(Tags=[{"Key": "Name", "Value": "GraphWordVPC"}])
+    print(f"VPC creada con ID: {vpc.id}")
 
-# Crear Subnets
-def create_subnet(vpc_id, cidr_block, availability_zone, auto_assign_ip=False):
-    response = ec2_client.create_subnet(
-        VpcId=vpc_id,
-        CidrBlock=cidr_block,
-        AvailabilityZone=availability_zone
+    subnet1 = vpc.create_subnet(CidrBlock="10.0.1.0/24", AvailabilityZone=f"{AWS_REGION}a")
+    subnet2 = vpc.create_subnet(CidrBlock="10.0.2.0/24", AvailabilityZone=f"{AWS_REGION}b")
+    print(f"Subred 1 creada con ID: {subnet1.id}")
+    print(f"Subred 2 creada con ID: {subnet2.id}")
+
+    igw = ec2.create_internet_gateway()
+    vpc.attach_internet_gateway(InternetGatewayId=igw.id)
+    print(f"Internet Gateway creado con ID: {igw.id}")
+
+    route_table = vpc.create_route_table()
+    route_table.create_route(DestinationCidrBlock="0.0.0.0/0", GatewayId=igw.id)
+    route_table.associate_with_subnet(SubnetId=subnet1.id)
+    route_table.associate_with_subnet(SubnetId=subnet2.id)
+
+    sg = ec2.create_security_group(
+        GroupName="graphword-sg",
+        Description="Permitir SSH, HTTP y HTTPS",
+        VpcId=vpc.id
     )
-    subnet_id = response['Subnet']['SubnetId']
-    print(f'Subnet creada con ID: {subnet_id} en {availability_zone}')
-    
-    if auto_assign_ip:
-        ec2_client.modify_subnet_attribute(
-            SubnetId=subnet_id,
-            MapPublicIpOnLaunch={'Value': True}
-        )
-        print(f'Asignación automática de IP pública habilitada para la Subnet {subnet_id}')
-    
-    return subnet_id
-
-# Crear Internet Gateway
-def create_internet_gateway(vpc_id):
-    response = ec2_client.create_internet_gateway()
-    igw_id = response['InternetGateway']['InternetGatewayId']
-    ec2_client.attach_internet_gateway(InternetGatewayId=igw_id, VpcId=vpc_id)
-    print(f'Internet Gateway creado con ID: {igw_id}')
-    return igw_id
-
-# Crear tabla de rutas
-def create_route_table(vpc_id, igw_id):
-    response = ec2_client.create_route_table(VpcId=vpc_id)
-    route_table_id = response['RouteTable']['RouteTableId']
-    ec2_client.create_route(
-        RouteTableId=route_table_id,
-        DestinationCidrBlock='0.0.0.0/0',
-        GatewayId=igw_id
-    )
-    print(f'Tabla de rutas creada con ID: {route_table_id}')
-    return route_table_id
-
-# Asociar tabla de rutas a una subnet
-def associate_route_table(route_table_id, subnet_id):
-    ec2_client.associate_route_table(RouteTableId=route_table_id, SubnetId=subnet_id)
-    print(f'Tabla de rutas asociada con la Subnet {subnet_id}')
-
-# Crear Security Group
-def create_security_group(vpc_id):
-    response = ec2_client.create_security_group(
-        GroupName='SG-OrderService',
-        Description='Security group for Order Service',
-        VpcId=vpc_id
-    )
-    sg_id = response['GroupId']
-    ec2_client.authorize_security_group_ingress(
-        GroupId=sg_id,
+    sg.authorize_ingress(
         IpPermissions=[
-            {
-                'IpProtocol': 'tcp',
-                'FromPort': 80,
-                'ToPort': 80,
-                'IpRanges': [{'CidrIp': '0.0.0.0/0'}]
-            }
+            {'FromPort': 22, 'ToPort': 22, 'IpProtocol': 'tcp', 'IpRanges': [{'CidrIp': '0.0.0.0/0'}]},
+            {'FromPort': 80, 'ToPort': 80, 'IpProtocol': 'tcp', 'IpRanges': [{'CidrIp': '0.0.0.0/0'}]},
+            {'FromPort': 5000, 'ToPort': 5000, 'IpProtocol': 'tcp', 'IpRanges': [{'CidrIp': '0.0.0.0/0'}]}
         ]
     )
-    print(f'Grupo de seguridad creado con ID: {sg_id}')
-    return sg_id
+    print(f"Grupo de seguridad creado con ID: {sg.id}")
 
-# Crear Load Balancer
-def create_load_balancer(subnet_ids, sg_id):
-    lb_name = f"order-service-lb-{int(time.time())}"
-    response = elb_client.create_load_balancer(
-        Name=lb_name,
+    return vpc.id, [subnet1.id, subnet2.id], sg.id
+
+def create_load_balancer(vpc_id, subnet_ids, sg_id):
+    print("Creando Load Balancer...")
+    lb = elbv2_client.create_load_balancer(
+        Name="GraphWordALB",
         Subnets=subnet_ids,
         SecurityGroups=[sg_id],
         Scheme='internet-facing',
+        Tags=[{'Key': 'Name', 'Value': 'GraphWordALB'}],
         Type='application',
         IpAddressType='ipv4'
     )
-    lb_arn = response['LoadBalancers'][0]['LoadBalancerArn']
-    print(f'Load Balancer creado con ARN: {lb_arn}')
-    return lb_arn
+    lb_arn = lb['LoadBalancers'][0]['LoadBalancerArn']
+    lb_dns_name = lb['LoadBalancers'][0]['DNSName']  
+    print(f"Load Balancer creado con ARN: {lb_arn}")
+    print(f"DNS público del Load Balancer: http://{lb_dns_name}")
 
-# Crear Target Group
-def create_target_group(vpc_id):
-    tg_name = f"order-service-tg-{int(time.time())}"
-    response = elb_client.create_target_group(
-        Name=tg_name,
+    target_group = elbv2_client.create_target_group(
+        Name='GraphWordTG1',
         Protocol='HTTP',
-        Port=80,
+        Port=5000,
         VpcId=vpc_id,
+        HealthCheckProtocol='HTTP',
+        HealthCheckPort='5000',
+        HealthCheckPath='/',
+        HealthCheckIntervalSeconds=30,
+        HealthCheckTimeoutSeconds=5,
+        HealthyThresholdCount=2,
+        UnhealthyThresholdCount=2,
         TargetType='instance'
     )
-    tg_arn = response['TargetGroups'][0]['TargetGroupArn']
-    print(f'Target Group creado con ARN: {tg_arn}')
-    return tg_arn
+    target_group_arn = target_group['TargetGroups'][0]['TargetGroupArn']
+    print(f"Target Group creado con ARN: {target_group_arn}")
 
-# Crear Listener para el Load Balancer
-def create_listener(lb_arn, tg_arn):
-    elb_client.create_listener(
+    listener = elbv2_client.create_listener(
         LoadBalancerArn=lb_arn,
         Protocol='HTTP',
         Port=80,
         DefaultActions=[{
             'Type': 'forward',
-            'TargetGroupArn': tg_arn
+            'TargetGroupArn': target_group_arn
         }]
     )
-    print('Listener creado y asociado al Load Balancer')
+    print(f"Listener creado con ARN: {listener['Listeners'][0]['ListenerArn']}")
 
-# Crear Launch Configuration con UserData
-def create_launch_configuration_with_userdata(sg_id):
-    UserData = """#!/bin/bash
-        yum install -y aws-cli
-        yum install -y curl
-        echo "UserData ejecutado correctamente."
-    """
-    autoscaling_client.create_launch_configuration(
-        LaunchConfigurationName='order-service-lc',
-        ImageId='ami-0fff1b9a61dec8a5f',  
-        InstanceType='t2.micro',
-        SecurityGroups=[sg_id],
-        UserData=UserData
-    )
-    print('Launch Configuration creada con UserData')
+    return target_group_arn, lb_dns_name
 
-# Crear Auto Scaling Group
-def create_auto_scaling_group(subnet_ids, tg_arn):
-    autoscaling_client.create_auto_scaling_group(
-        AutoScalingGroupName='order-service-asg',
-        LaunchConfigurationName='order-service-lc',
-        MinSize=1,
-        MaxSize=3,
-        DesiredCapacity=1,
-        VPCZoneIdentifier=','.join(subnet_ids),
-        TargetGroupARNs=[tg_arn]
-    )
-    print('Auto Scaling Group creado')
+def launch_ec2_instances(target_group_arn, subnet_ids, sg_id):
+    instance_ids = []
+    public_ips = []
 
-# Ejecutar un script `Create_Lamdba_*` para Lambdas Locales
-def execute_create_lambda(script_name):
-    try:
-        subprocess.run(["python", script_name], check=True)
-        print(f"Script '{script_name}' ejecutado exitosamente.")
-    except subprocess.CalledProcessError as e:
-        print(f"Error al ejecutar '{script_name}': {e}")
+    for subnet_id in subnet_ids:
+        print(f"Lanzando instancia EC2 en la subnet {subnet_id}...")
+        instance = ec2.create_instances(
+            ImageId=AMI_ID,
+            InstanceType=INSTANCE_TYPE,
+            KeyName=KEY_NAME,
+            MinCount=1,
+            MaxCount=1,
+            NetworkInterfaces=[{
+                'SubnetId': subnet_id,
+                'DeviceIndex': 0,
+                'AssociatePublicIpAddress': True,
+                'Groups': [sg_id]
+            }],
+            IamInstanceProfile={
+                'Name': ROLE_NAME
+            },
+            UserData=f"""#!/bin/bash
+            yum install -y python3-pip
+            pip3 install boto3 Flask
+            aws s3 cp s3://{BUCKET_NAME}/create_datalake.py /home/ec2-user/create_datalake.py
+            python3 /home/ec2-user/create_datalake.py
+            aws s3 cp s3://{BUCKET_NAME}/create_datamart.py /home/ec2-user/create_datamart.py
+            python3 /home/ec2-user/create_datamart.py
+            aws s3 cp s3://{BUCKET_NAME}/create_graph.py /home/ec2-user/create_graph.py
+            python3 /home/ec2-user/create_graph.py
+            aws s3 cp s3://{BUCKET_NAME}/create_api.py /home/ec2-user/create_api.py
+            aws s3 cp s3://{BUCKET_NAME}/create_functions_api.py /home/ec2-user/create_functions_api.py
+            python3 /home/ec2-user/create_api.py
+            """,
+            TagSpecifications=[{
+                'ResourceType': 'instance',
+                'Tags': [{'Key': 'Name', 'Value': f'GraphWord-Instance-{subnet_id}'}]
+            }]
+        )[0]
 
-# Invocar Lambda Local
-def invoke_lambda(function_name, payload):
-    try:
-        print(f"Invocando Lambda '{function_name}' con payload: {payload}")
-        response = lambda_client.invoke(
-            FunctionName=function_name,
-            InvocationType='RequestResponse',
-            Payload=json.dumps(payload)
+        instance.wait_until_running()
+        instance.load()
+        print(f"Instancia EC2 creada con IP pública: {instance.public_ip_address} en subnet {subnet_id}")
+
+        elbv2_client.register_targets(
+            TargetGroupArn=target_group_arn,
+            Targets=[{'Id': instance.id}]
         )
-        result = response['Payload'].read().decode('utf-8')
-        print(f"Resultado de invocar '{function_name}': {result}")
-    except Exception as e:
-        print(f"Error al invocar la Lambda '{function_name}': {e}")
+        print(f"Instancia {instance.id} registrada en el Target Group.")
 
-# Crear API Gateway
-def create_api_gateway(api_name):
-    response = apigateway_client.create_rest_api(name=api_name)
-    api_id = response['id']
-    print(f"API Gateway creado con ID: {api_id}")
-    return api_id
+        instance_ids.append(instance.id)
+        public_ips.append(instance.public_ip_address)
 
-# Obtener el ID del recurso raíz
-def get_root_resource_id(api_id):
-    response = apigateway_client.get_resources(restApiId=api_id)
-    root_id = next(item['id'] for item in response['items'] if item['path'] == '/')
-    print(f"ID del recurso raíz: {root_id}")
-    return root_id
+    return instance_ids, public_ips
 
-# Configurar recurso y método GET
-def create_resource_and_method(api_id, root_id, path_part, lambda_arn):
-    response = apigateway_client.create_resource(
-        restApiId=api_id,
-        parentId=root_id,
-        pathPart=path_part
-    )
-    resource_id = response['id']
-    print(f"Recurso creado con ID: {resource_id} y path: {path_part}")
-    
-    apigateway_client.put_method(
-        restApiId=api_id,
-        resourceId=resource_id,
-        httpMethod='GET',
-        authorizationType='NONE'
-    )
-    apigateway_client.put_integration(
-        restApiId=api_id,
-        resourceId=resource_id,
-        httpMethod='GET',
-        type='AWS_PROXY',
-        integrationHttpMethod='POST',
-        uri=f'arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/{lambda_arn}/invocations'
-    )
-    print(f"Método GET configurado para {path_part}. Lambda URI: arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/{lambda_arn}/invocations")
-    return resource_id
-
-# Desplegar API
-def deploy_api(api_id, stage_name):
-    response = apigateway_client.create_deployment(
-        restApiId=api_id,
-        stageName=stage_name
-    )
-    print(f"API desplegada en la etapa {stage_name}")
-    api_url = f"https://{api_id}.execute-api.us-east-1.amazonaws.com/{stage_name}"
-    print(f"URL de la API: {api_url}")
-    return response['id']
-
-
-# Flujo Principal
-def main():
-    # Configuración básica en AWS
-    vpc_id = create_vpc()
-    subnet_public_1 = create_subnet(vpc_id, '10.0.0.0/24', 'us-east-1a', auto_assign_ip=True)
-    subnet_public_2 = create_subnet(vpc_id, '10.0.3.0/24', 'us-east-1b', auto_assign_ip=True)
-    igw_id = create_internet_gateway(vpc_id)
-    route_table_id = create_route_table(vpc_id, igw_id)
-    associate_route_table(route_table_id, subnet_public_1)
-    associate_route_table(route_table_id, subnet_public_2)
-    sg_id = create_security_group(vpc_id)
-    lb_arn = create_load_balancer([subnet_public_1, subnet_public_2], sg_id)
-    tg_arn = create_target_group(vpc_id)
-    create_listener(lb_arn, tg_arn)
-    create_launch_configuration_with_userdata(sg_id)
-    create_auto_scaling_group([subnet_public_1, subnet_public_2], tg_arn)
-
-     # Implementación de API Gateway
-    api_name = "MyAPI"
-    api_id = create_api_gateway(api_name)
-    root_id = get_root_resource_id(api_id)
-    lambda_arn = "arn:aws:lambda:us-east-1:000000000000:function:LambdaScriptApi"  # ARN de la Lambda API
-    resource_id = create_resource_and_method(api_id, root_id, "Dijkstra", lambda_arn)
-    deploy_api(api_id, "test")
-
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    
-    # Scripts `Create_Lamdba_*` para configurar Lambdas locales
-    create_scripts = [
-        os.path.join(BASE_DIR, "lambdas/create_lambda_datalake.py"),
-        os.path.join(BASE_DIR, "lambdas/create_lambda_datamart.py"),
-        os.path.join(BASE_DIR, "lambdas/create_lambda_graph.py"),
-        os.path.join(BASE_DIR, "lambdas/create_lambda_api.py")
-    ]
-    
-    for script in create_scripts:
-        execute_create_lambda(script)
-
-    # Invocar Lambdas creadas en LocalStack
-    lambdas_to_invoke = [
-        {"name": "LambdaScriptDatalake", "payload": {"action": "process_datalake"}},
-        {"name": "LambdaScriptDatamart", "payload": {"action": "process_datamart"}},
-        {"name": "LambdaScriptGraph", "payload": {"action": "process_graph"}},
-        {"name": "LambdaScriptApi", "payload": {"action": "serve_api"}}
-    ]
-    
-    for lambda_config in lambdas_to_invoke:
-        print(f"Invocando {lambda_config['name']}...")
-        invoke_lambda(lambda_config["name"], lambda_config["payload"])
-
-if __name__ == '__main__':
-    main()
+if __name__ == "__main__":
+    upload_script_to_s3()
+    vpc_id, subnet_ids, sg_id = create_vpc()
+    target_group_arn, lb_dns_name = create_load_balancer(vpc_id, subnet_ids, sg_id)
+    instance_ids, public_ips = launch_ec2_instances(target_group_arn, subnet_ids, sg_id)
+    print(f"¡Despliegue completo! Instancias lanzadas: {instance_ids}")
+    print(f"\nPara realizar consultas, usa la siguiente URL: http://{lb_dns_name}")
