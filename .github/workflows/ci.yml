@@ -1,6 +1,5 @@
 name: CI/CD Pipeline
 
-# Ejecutar en pushes a main y develop y disparos manuales
 on:
   push:
     branches:
@@ -11,8 +10,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  setup:
-    name: "Preparar entorno de trabajo"
+  setup_deploy:
+    name: "Preparar entorno de trabajo y desplegar"
     runs-on: ubuntu-22.04
 
     steps:
@@ -29,22 +28,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install boto3 Flask pytest
 
-  deploy:
-    name: "Desplegar infraestructura en AWS"
-    runs-on: ubuntu-22.04
-    needs: setup  # Se asegura de que el job `setup` se ejecute antes.
-    
-    # Se eliminó la condición para permitir que se ejecute en cualquier rama
-    steps:
-      - name: "Checkout del repositorio"
-        uses: actions/checkout@v4
-
       - name: "Configurar credenciales AWS"
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: "us-east-1"
 
       - name: "Desplegar aplicación en AWS EC2"
@@ -54,7 +42,7 @@ jobs:
   performance:
     name: "Pruebas de rendimiento"
     runs-on: ubuntu-22.04
-    needs: deploy
+    needs: setup_deploy
 
     steps:
       - name: "Clonar repositorio"
@@ -69,6 +57,5 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
         run: |
           aws s3 cp locust_result.html s3://performance-reports-bucket/locust_result.html
