@@ -4,16 +4,23 @@ import os
 import time
 import json
 
-LOCALSTACK_URL = os.getenv('LOCALSTACK_URL', 'http://localhost:4566')
+LOCALSTACK_URL = os.getenv('LOCALSTACK_URL', 'http://172.17.0.2:4566')
 print(f"Conectando a LocalStack en {LOCALSTACK_URL}")
 
 # Crear clientes para AWS y LocalStack
 ec2_client = boto3.client('ec2')
 elb_client = boto3.client('elbv2')
 autoscaling_client = boto3.client('autoscaling')
-s3 = boto3.client("s3")
+s3_client = boto3.client('s3')
 lambda_client = boto3.client('lambda', endpoint_url=LOCALSTACK_URL)  # LocalStack
 apigateway_client = boto3.client('apigateway')  # Cliente para API Gateway
+
+# Solicitar URL de Ngrok al usuario
+def get_ngrok_url():
+    ngrok_url = os.getenv('NGROK_URL')
+    if not ngrok_url:
+        raise ValueError("La variable de entorno NGROK_URL no está definida.")
+    return ngrok_url
 
 # Crear VPC
 def create_vpc():
@@ -140,7 +147,7 @@ def create_launch_configuration_with_userdata(sg_id):
         echo "UserData ejecutado correctamente."
     """
     autoscaling_client.create_launch_configuration(
-        LaunchConfigurationName='order-service-lc',
+        LaunchConfigurationName='order-service-lc1',
         ImageId='ami-0fff1b9a61dec8a5f',  
         InstanceType='t2.micro',
         SecurityGroups=[sg_id],
@@ -151,8 +158,8 @@ def create_launch_configuration_with_userdata(sg_id):
 # Crear Auto Scaling Group
 def create_auto_scaling_group(subnet_ids, tg_arn):
     autoscaling_client.create_auto_scaling_group(
-        AutoScalingGroupName='order-service-asg',
-        LaunchConfigurationName='order-service-lc',
+        AutoScalingGroupName='order-service-asg1',
+        LaunchConfigurationName='order-service-lc1',
         MinSize=1,
         MaxSize=3,
         DesiredCapacity=1,
@@ -198,7 +205,9 @@ def get_root_resource_id(api_id):
     return root_id
 
 # Configurar recurso y método GET
-def create_resource_and_method(api_id, root_id, path_part, lambda_arn):
+def create_resource_and_method(api_id, root_id, path_part, lambda_arn=None):
+    ngrok_url = get_ngrok_url()
+
     response = apigateway_client.create_resource(
         restApiId=api_id,
         parentId=root_id,
@@ -213,16 +222,22 @@ def create_resource_and_method(api_id, root_id, path_part, lambda_arn):
         httpMethod='GET',
         authorizationType='NONE'
     )
+    
+    # Endpoint de Ngrok + ruta del servicio Flask
     apigateway_client.put_integration(
         restApiId=api_id,
         resourceId=resource_id,
         httpMethod='GET',
-        type='AWS_PROXY',
-        integrationHttpMethod='POST',
-        uri=f'arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/{lambda_arn}/invocations'
+        type='HTTP_PROXY',
+        integrationHttpMethod='GET',  # Cambiado a GET porque es proxy a un endpoint HTTP
+        uri=f'{ngrok_url}/{path_part}',  # URL final: https://xxxxx.ngrok-free.app/camino_mas_largo
+        requestParameters={
+            'integration.request.header.ngrok-skip-browser-warning': "'true'"
+        }
     )
-    print(f"Método GET configurado para {path_part}. Lambda URI: arn:aws:apigateway:us-east-1:lambda:path/2015-03-31/functions/{lambda_arn}/invocations")
+    print(f"Método GET configurado para {path_part}. URI final: {ngrok_url}/{path_part}")
     return resource_id
+
 
 # Desplegar API
 def deploy_api(api_id, stage_name):
@@ -239,30 +254,30 @@ def deploy_api(api_id, stage_name):
 # Flujo Principal
 def main():
     # Configuración básica en AWS
-    vpc_id = create_vpc()
-    subnet_public_1 = create_subnet(vpc_id, '10.0.0.0/24', 'us-east-1a', auto_assign_ip=True)
-    subnet_public_2 = create_subnet(vpc_id, '10.0.3.0/24', 'us-east-1b', auto_assign_ip=True)
-    igw_id = create_internet_gateway(vpc_id)
-    route_table_id = create_route_table(vpc_id, igw_id)
-    associate_route_table(route_table_id, subnet_public_1)
-    associate_route_table(route_table_id, subnet_public_2)
-    sg_id = create_security_group(vpc_id)
-    lb_arn = create_load_balancer([subnet_public_1, subnet_public_2], sg_id)
-    tg_arn = create_target_group(vpc_id)
-    create_listener(lb_arn, tg_arn)
-    create_launch_configuration_with_userdata(sg_id)
-    create_auto_scaling_group([subnet_public_1, subnet_public_2], tg_arn)
+    #vpc_id = create_vpc()
+    #subnet_public_1 = create_subnet(vpc_id, '10.0.0.0/24', 'us-east-1a', auto_assign_ip=True)
+    ##subnet_public_2 = create_subnet(vpc_id, '10.0.3.0/24', 'us-east-1b', auto_assign_ip=True)
+    #igw_id = create_internet_gateway(vpc_id)
+    #route_table_id = create_route_table(vpc_id, igw_id)
+    #associate_route_table(route_table_id, subnet_public_1)
+    #associate_route_table(route_table_id, subnet_public_2)
+    #sg_id = create_security_group(vpc_id)
+    #lb_arn = create_load_balancer([subnet_public_1, subnet_public_2], sg_id)
+    #tg_arn = create_target_group(vpc_id)
+    #create_listener(lb_arn, tg_arn)
+    #create_launch_configuration_with_userdata(sg_id)
+    #create_auto_scaling_group([subnet_public_1, subnet_public_2], tg_arn)
 
-     # Implementación de API Gateway
+    # Implementación de API Gateway
     api_name = "MyAPI"
     api_id = create_api_gateway(api_name)
     root_id = get_root_resource_id(api_id)
     lambda_arn = "arn:aws:lambda:us-east-1:000000000000:function:LambdaScriptApi"  # ARN de la Lambda API
-    resource_id = create_resource_and_method(api_id, root_id, "Dijkstra", lambda_arn)
+    resource_id = create_resource_and_method(api_id, root_id, "camino_mas_largo", lambda_arn)
     deploy_api(api_id, "test")
 
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    
+
     # Scripts `Create_Lamdba_*` para configurar Lambdas locales
     create_scripts = [
         os.path.join(BASE_DIR, "lambdas/create_lambda_datalake.py"),
@@ -275,12 +290,83 @@ def main():
         execute_create_lambda(script)
 
     # Invocar Lambdas creadas en LocalStack
+    # Invocar Lambdas creadas en LocalStack
     lambdas_to_invoke = [
-        {"name": "LambdaScriptDatalake", "payload": {"action": "process_datalake"}},
-        {"name": "LambdaScriptDatamart", "payload": {"action": "process_datamart"}},
-        {"name": "LambdaScriptGraph", "payload": {"action": "process_graph"}},
-        {"name": "LambdaScriptApi", "payload": {"action": "serve_api"}}
+    {"name": "LambdaScriptDatalake", "payload": {"action": "process_datalake"}},
+    {"name": "LambdaScriptDatamart", "payload": {"action": "process_datamart"}},
+    {"name": "LambdaScriptGraph", "payload": {"action": "process_graph"}},
+    {
+        "name": "LambdaScriptApi",
+        "payload": {
+            "path": "/camino_mas_largo",
+            "httpMethod": "GET",
+            "queryStringParameters": {
+                "start": "the",
+                "end": "for"
+            }
+        }
+    },
+    {
+        "name": "LambdaScriptApi",
+        "payload": {
+            "path": "/Dijkstra/",
+            "httpMethod": "GET",
+            "queryStringParameters": {
+                "start": "the",
+                "target": "for"
+            }
+        }
+    },
+    {
+        "name": "LambdaScriptApi",
+        "payload": {
+            "path": "/nodos_aislados",
+            "httpMethod": "GET",
+            "queryStringParameters": {}
+        }
+    },
+    {
+        "name": "LambdaScriptApi",
+        "payload": {
+            "path": "/nodos_alto_grado",
+            "httpMethod": "GET",
+            "queryStringParameters": {
+                "umbral": "3"
+            }
+        }
+    },
+    {
+        "name": "LambdaScriptApi",
+        "payload": {
+            "path": "/nodos_grado_especifico",
+            "httpMethod": "GET",
+            "queryStringParameters": {
+                "grado": "2"
+            }
+        }
+    },
+    {
+        "name": "LambdaScriptApi",
+        "payload": {
+            "path": "/todos_los_caminos",
+            "httpMethod": "GET",
+            "queryStringParameters": {
+                "start": "the",
+                "target": "for"
+            }
+        }
+    },
+    {
+        "name": "LambdaScriptApi",
+        "payload": {
+            "path": "/detectar_clusters",
+            "httpMethod": "GET",
+            "queryStringParameters": {}
+        }
+    }
     ]
+
+
     
     for lambda_config in lambdas_to_invoke:
         print(f"Invocando {lambda_config['name']}...")

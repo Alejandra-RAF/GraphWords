@@ -1,6 +1,7 @@
 import boto3
 from flask import Flask, request, jsonify
 import heapq
+from collections import deque
 
 # Obtener el nombre del archivo en S3
 def obtener_nombre_archivo_en_s3(bucket_name, prefix):
@@ -91,6 +92,49 @@ def camino_mas_largo(graph, start=None, end=None):
                     target_word = end
 
     return max_path, max_distance, start_word, target_word
+
+def obtener_todos_los_caminos(graph, start, target, max_depth=10):
+    paths = []
+    queue = deque([(start, [start])])
+
+    while queue:
+        current_node, path = queue.popleft()
+
+        if len(path) > max_depth:  # Limitar la profundidad
+            continue
+
+        for weight, neighbor in graph[current_node]:
+            if neighbor in path:
+                continue
+            new_path = path + [neighbor]
+            if neighbor == target:
+                paths.append(new_path)
+            else:
+                queue.append((neighbor, new_path))
+
+    return paths
+
+
+def detectar_clusters(graph):
+    visited = set()
+    clusters = []
+
+    def dfs(node, cluster):
+        if node not in visited:
+            visited.add(node)
+            cluster.append(node)
+            for weight, neighbor in graph[node]:  # Desempaquetamos el peso y el vecino
+                dfs(neighbor, cluster)
+
+    for node in graph:
+        if node not in visited:
+            cluster = []
+            dfs(node, cluster)
+            if len(cluster) > 1:  # Solo consideramos clusters con más de un nodo
+                clusters.append(cluster)
+
+    return clusters
+
 
 # Función para detectar nodos aislados
 def detectar_nodos_aislados(graph):
