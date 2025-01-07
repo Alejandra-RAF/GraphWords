@@ -2,11 +2,11 @@ import boto3
 
 AWS_REGION = "us-east-1"
 BUCKET_NAME = "deployments-bucket456"
-FILE_PATH_DATALEKE = "utility_scripts/create_datalake.py"
-FILE_PATH_DATAMART = "utility_scripts/create_datamart.py"
-FILE_PATH_GRAPH = "utility_scripts/create_graph.py"
-FILE_PATH_API = "utility_scripts/create_api.py"
-FILE_PATH_FUNCTIONS_API = "utility_scripts/create_functions_api.py"
+FILE_PATH_DATALEKE = "src/utility_scripts/create_datalake.py"
+FILE_PATH_DATAMART = "src/utility_scripts/create_datamart.py"
+FILE_PATH_GRAPH = "src/utility_scripts/create_graph.py"
+FILE_PATH_API = "src/utility_scripts/create_api.py"
+FILE_PATH_FUNCTIONS_API = "src/utility_scripts/create_functions_api.py"
 
 AMI_ID = "ami-0fff1b9a61dec8a5f"
 INSTANCE_TYPE = "t2.micro"
