@@ -33,8 +33,8 @@ jobs:
     name: "Desplegar infraestructura en AWS"
     runs-on: ubuntu-22.04
     needs: setup  # Se asegura de que el job `setup` se ejecute antes.
-    if: github.ref == 'refs/heads/notmain'  # Ajustado a la rama actual.
-
+    
+    # Se eliminó la condición para permitir que se ejecute en cualquier rama
     steps:
       - name: "Checkout del repositorio"
         uses: actions/checkout@v4
@@ -55,6 +55,7 @@ jobs:
     name: "Pruebas de rendimiento"
     runs-on: ubuntu-22.04
     needs: deploy
+
     steps:
       - name: "Clonar repositorio"
         uses: actions/checkout@v4
