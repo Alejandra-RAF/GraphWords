@@ -41,9 +41,16 @@ jobs:
         run: |
           python src/deployment.py | tee deployment_output.txt
           LB_URL=$(grep -oP 'http://\S+' deployment_output.txt | tail -n 1)
-          echo "LB_URL=${LB_URL}"
-          echo "LB_URL=${LB_URL}" >> $GITHUB_ENV
+          if [ -z "$LB_URL" ]; then
+            echo "Error: No se encontró la URL de despliegue. Revisa deployment.py"
+            exit 1
+          fi
+          echo "LB_URL=$LB_URL"
+          echo "::set-output name=lb_url::$LB_URL"
         shell: bash
+
+    outputs:
+      lb_url: ${{ steps.deploy_app.outputs.lb_url }}
 
   performance:
     name: "Pruebas de rendimiento"
@@ -51,15 +58,15 @@ jobs:
     needs: setup_deploy
 
     steps:
-      - name: "Esperando 1 minuto a terminar de desplegar la infraestructura AWS..."
-        run: sleep 60
+      - name: "Esperando 2 minutos a terminar de desplegar la infraestructura AWS..."
+        run: sleep 120
 
       - name: "Clonar repositorio"
         uses: actions/checkout@v4
 
       - name: "Configurar Locust para pruebas de carga"
         env:
-          LB_URL: ${{ env.LB_URL }}
+          LB_URL: ${{ needs.setup_deploy.outputs.lb_url }}
         run: |
           pip install locust
           echo "Prueba de carga en: $LB_URL"
