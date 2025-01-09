@@ -8,8 +8,8 @@ class GraphWordUser(HttpUser):
     def test_dijkstra_endpoint(self):
         """Prueba del endpoint de Dijkstra."""
         response = self.client.get("/Dijkstra/", params={
-            "start": "the",
-            "target": "and",
+            "start": "not",
+            "target": "can",
             "tipo": "3"
         })
         assert response.status_code == 200, f"Error en Dijkstra: {response.text}"
@@ -18,8 +18,8 @@ class GraphWordUser(HttpUser):
     def test_camino_mas_largo(self):
         """Prueba del endpoint de camino más largo."""
         response = self.client.get("/camino_mas_largo", params={
-            "start": "ball",
-            "end": "bell",
+            "start": "well",
+            "end": "role",
             "tipo": "4"
         })
         assert response.status_code == 200, f"Error en camino más largo: {response.text}"
