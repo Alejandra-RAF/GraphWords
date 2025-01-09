@@ -8,12 +8,12 @@ class GraphWordUser(HttpUser):
     def test_dijkstra_endpoint(self):
         """Prueba del endpoint de Dijkstra."""
         response = self.client.get("/Dijkstra/", params={
-            "start": "dig",
-            "target": "dog",
+            "start": "the",
+            "target": "and",
             "tipo": "3"
         })
         assert response.status_code == 200, f"Error en Dijkstra: {response.text}"
-
+    
     @task
     def test_camino_mas_largo(self):
         """Prueba del endpoint de camino más largo."""
@@ -46,8 +46,8 @@ class GraphWordUser(HttpUser):
     def test_todos_los_caminos(self):
         """Prueba del endpoint de todos los caminos."""
         response = self.client.get("/todos_los_caminos", params={
-            "start": "cat",
-            "target": "bat",
+            "start": "not",
+            "target": "for",
             "tipo": "3"
         })
         assert response.status_code == 200, f"Error en todos los caminos: {response.text}"
