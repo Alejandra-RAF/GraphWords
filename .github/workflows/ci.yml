@@ -78,4 +78,6 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
         run: |
+          aws s3 ls "s3://performance-reports-bucket" || aws s3 mb s3://performance-reports-bucket --region us-east-1
           aws s3 cp locust_result.html s3://performance-reports-bucket/locust_result.html
+
