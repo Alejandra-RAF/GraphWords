@@ -55,8 +55,8 @@ Este diagrama ilustra el flujo completo del pipeline de CI/CD descrito en el arc
      - `Extraer URL del Load Balancer`: Se extrae la URL del Load Balancer de la salida del script.
 
    **Validación de URL:** 
-   - Si no se detecta una URL válida, el workflow falla con un mensaje de error.
-   - Si la URL es correcta, continúa con la etapa de pruebas.
+   - Si no se detecta una URL válida, el workflow falla con un mensaje de error. Esta URL es necesaria para las pruebas con locust
+   - Si la URL es correcta, continúa con la etapa de pruebas. 
 
 3. **Pruebas de Carga (`performance`):**
    - **Tiempo de espera:** Se espera 2 minutos (`sleep 120`) para garantizar que el Load Balancer esté listo.
@@ -73,32 +73,19 @@ Este diagrama ilustra el flujo completo del pipeline de CI/CD descrito en el arc
 
 ---
 
-## **3. Ubicación del Archivo**
+## **3. Ubicación del Archivo workflow**
 
-El archivo `ci_cd_workflow.yml` debe ubicarse en la carpeta `.github/workflows/` dentro del repositorio. 
-
-El archivo de documentación `ci_cd_pipeline_documentation.md` puede ubicarse en:
-- La **carpeta raíz del repositorio (`/`)** si es un archivo principal.
-- La carpeta **`docs/`** si prefieres tener una estructura organizada para la documentación.
-- **Ejemplo de ruta:**
-  ```bash
-  /docs/ci_cd_pipeline_documentation.md
-  ```
+El archivo `ci_cd_workflow.yml` que se documenta, se ubica en la carpeta `.github/workflows/` dentro del repositorio. 
 
 ---
 
 ## **4. Consejos Adicionales**
-
-1. **Documentación Clara:** Asegúrate de mantener los comentarios actualizados en el archivo `ci_cd_workflow.yml` para facilitar la lectura y mantenimiento del pipeline.
    
-2. **Enlace en el `README.md`:** Puedes agregar un enlace al archivo de documentación desde el `README.md`:
+1. **Enlace en el `README.md`:** Puedes agregar un enlace al archivo de documentación desde el `README.md`:
    ```markdown
-   [Ver la Documentación del Pipeline de CI/CD](./docs/ci_cd_pipeline_documentation.md)
+   [Ver la Documentación del programa y pasos para su ejecucion(./readme.md)
    ```
 
-3. **Uso de Variables de Entorno:** 
-   - Mantén las credenciales AWS seguras en los `secrets` de GitHub.
-   - No almacenes información sensible directamente en el archivo YAML.
-
-4. **Pruebas Locales:** Antes de subir cambios al pipeline, ejecuta los scripts (`deployment.py`, `locustfile.py`) localmente para identificar errores con anticipación.
-
+2. **Uso de Variables de Entorno:** 
+   - Las credenciales AWS seguras deben situarse en los `secrets` de GitHub.
+   - ¡No almacenes información sensible directamente en el archivo YAML!
