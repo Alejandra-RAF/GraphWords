@@ -8,21 +8,21 @@ flowchart TD
         E --> F[Configurar Credenciales AWS]
         F --> G[Ejecutar Deployment Script]
         G --> H[Extraer URL del Load Balancer]
-
-        subgraph Pruebas
-            H --> I[Esperar 2 Minutos]
-            I --> J[Configuración Locust]
-            J --> K[Ejecutar Pruebas de Carga]
-            K --> L[Generar Archivo locust_result.html]
-            L --> M[Subir Resultados a S3]
-        end
-
-        subgraph ErrorCheck
-            K --> |Error: No se generó locust_result.html| N[Fallo del Workflow]
-        end
-
-        M --> O[Fin del Pipeline]
     end
+
+    subgraph Pruebas
+        H --> I[Esperar 2 Minutos]
+        I --> J[Configuración Locust]
+        J --> K[Ejecutar Pruebas de Carga]
+        K --> L[Generar Archivo locust_result.html]
+        L --> M[Subir Resultados a S3]
+    end
+
+    subgraph ErrorCheck
+        K --> |Error: No se generó locust_result.html| N[Fallo del Workflow]
+    end
+
+    M --> O[Fin del Pipeline]
 
 ---
 
