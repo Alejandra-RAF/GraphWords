@@ -4,7 +4,7 @@ Este proyecto implementa una aplicación distribuida utilizando instancias **EC2
 
 ---
 
-## **1. Arquitectura en AWS EC2**
+## **Arquitectura en AWS EC2**
 
 La arquitectura se basa en una infraestructura distribuida con los siguientes componentes:
 
@@ -22,17 +22,17 @@ La arquitectura se basa en una infraestructura distribuida con los siguientes co
 
 ---
 
-## **2. Configuración del Workflow de GitHub Actions**
+## **Configuración del Workflow de GitHub Actions**
 
 Este proyecto incluye un archivo `ci_cd_pipeline.yml` que automatiza el despliegue y las pruebas mediante GitHub Actions. Tambien se incluye un archvio `ci_cd_documentation.md` que describe el workflow mediante un diagrama y texto.
 
 ---
 
-## **3. Pasos para Ejecutar el Programa en la Nube**
+## **Pasos para Ejecutar el Programa en la Nube**
 
 ### **1. Clonar el repositorio:**
 ```bash
-git clone <URL_DEL_REPOSITORIO>
+git clone [<URL_DEL_REPOSITORIO>](https://github.com/Alejandra-RAF/GraphWords)
 cd GraphWord
 ```
 
@@ -53,7 +53,7 @@ En cada uno de ellos deberás de utilizar tus credenciales de AWS en donde quier
 
 ---
 
-## **4. Resultados del Despliegue**
+## **Resultados del Despliegue**
 
 - **Acceso a la API:** Una vez desplegado, puedes acceder a la API Flask mediante la URL proporcionada por el balanceador de carga (ALB).
 - **Pruebas de Carga:** El workflow incluye pruebas de rendimiento con **Locust** para verificar la estabilidad de la API con usuarios concurrentes. Estos estaran subidos en el bucket creado automaticamente de `performance-reports-bucket` en el S3 de tu AWS.
