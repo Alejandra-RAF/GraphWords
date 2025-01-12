@@ -24,9 +24,8 @@ La arquitectura se basa en una infraestructura distribuida con los siguientes co
 
 ## **2. Configuración del Workflow de GitHub Actions**
 
-Este proyecto incluye un archivo `ci_cd_pipeline.yml` que automatiza el despliegue y las pruebas mediante GitHub Actions.
+Este proyecto incluye un archivo `ci_cd_pipeline.yml` que automatiza el despliegue y las pruebas mediante GitHub Actions. Tambien se incluye un archvio `ci_cd_documentation.md` que describe el workflow mediante un diagrama y texto.
 
-Tambien se incluye un archvio `ci_cd_documentation.md` que describe el workflow mediante un diagrama y texto.
 ---
 
 ## **3. Pasos para Ejecutar el Programa en la Nube**
