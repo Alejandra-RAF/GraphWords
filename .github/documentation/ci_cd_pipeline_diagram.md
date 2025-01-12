@@ -102,13 +102,3 @@ El archivo de documentación `ci_cd_pipeline_documentation.md` puede ubicarse en
 
 4. **Pruebas Locales:** Antes de subir cambios al pipeline, ejecuta los scripts (`deployment.py`, `locustfile.py`) localmente para identificar errores con anticipación.
 
----
-
-### **Resumen:**
-Este archivo contiene:
-1. Un diagrama Mermaid que muestra el flujo de trabajo.
-2. Explicación detallada de las etapas del pipeline (`setup_deploy` y `performance`).
-3. Información sobre la ubicación recomendada de los archivos.
-4. Consejos prácticos para mejorar la seguridad y el mantenimiento del pipeline.
-
-Con esta estructura, tienes una documentación clara y completa que puedes incluir directamente en tu repositorio.
