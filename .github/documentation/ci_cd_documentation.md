@@ -83,7 +83,7 @@ El archivo `ci_cd_pipeline.yml` que se documenta, se ubica en la carpeta `.githu
    
 1. **Enlace en el `README.md`:** Puedes agregar un enlace al archivo de documentación desde el `README.md`:
    ```markdown
-   [Ver la Documentación del programa y pasos para su ejecucion(./readme.md)
+   [Ver la Documentación del programa y pasos para su ejecucion([./readme.md](https://github.com/Alejandra-RAF/GraphWords/blob/main/.github/README.md))
    ```
 
 2. **Uso de Variables de Entorno:** 
