@@ -39,7 +39,7 @@ flowchart TD
 
 ## **2. Explicación del Diagrama**
 
-Este diagrama ilustra el flujo completo del pipeline de CI/CD descrito en el archivo `ci_cd_workflow.yml`.
+Este diagrama ilustra el flujo completo del pipeline de CI/CD descrito en el archivo `ci_cd_pipeline.yml`.
 
 ### **Etapas del Pipeline:**
 
