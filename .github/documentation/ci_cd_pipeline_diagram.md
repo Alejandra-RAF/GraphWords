@@ -1,3 +1,7 @@
+# Diagrama del CI/CD Pipeline del Proyecto
+
+Este documento muestra el flujo de trabajo del archivo `ci_cd_pipeline.yml`.
+
 ```mermaid
 flowchart TD
     subgraph Pipeline
@@ -23,29 +27,3 @@ flowchart TD
     end
 
     M --> O[Fin del Pipeline]
-
----
-
-### **Explicación del Diagrama:**
-
-1. **Inicio:** Se activa cuando hay un **push/pull request** en la rama `main`.
-2. **Setup Deploy:** 
-   - **Pasos:**
-     - `Checkout del repositorio`: Se clona el código.
-     - `Configurar Python`: Se configura el entorno con Python 3.9.
-     - `Instalación de dependencias`: Se instalan las librerías necesarias (`boto3`, `Flask`, `awscli`).
-     - `Configurar credenciales AWS`: Se autentica con los secretos de AWS.
-     - `Ejecutar script deployment.py`: Despliega la aplicación en AWS EC2.
-     - `Extraer URL`: Se guarda la URL del Load Balancer para las pruebas.
-3. **Pruebas de Carga:**
-   - Se espera 2 minutos para que el entorno esté disponible.
-   - Se ejecuta **Locust** con las pruebas de carga.
-   - Si se genera el archivo `locust_result.html`, se sube a **S3**.
-4. **Control de Errores:** 
-   - Si el archivo de resultados no se genera, el workflow falla.
-5. **Fin del Pipeline:** Si todo funciona, se cierra el pipeline exitosamente.
-
----
-
-### **Visualización:**
-Este diagrama refleja el flujo de cada paso en tu workflow YAML y es ideal para documentar cómo funciona tu CI/CD pipeline en GitHub. Puedes integrarlo en tu `README.md` o `DOCUMENTATION.md` con Mermaid para una vista gráfica más clara.
