@@ -75,7 +75,7 @@ Este diagrama ilustra el flujo completo del pipeline de CI/CD descrito en el arc
 
 ## **3. Ubicación del Archivo workflow**
 
-El archivo `ci_cd_workflow.yml` que se documenta, se ubica en la carpeta `.github/workflows/` dentro del repositorio. 
+El archivo `ci_cd_pipeline.yml` que se documenta, se ubica en la carpeta `.github/workflows/` dentro del repositorio. 
 
 ---
 
