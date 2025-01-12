@@ -81,11 +81,7 @@ El archivo `ci_cd_pipeline.yml` que se documenta, se ubica en la carpeta `.githu
 
 ## **4. Consejos Adicionales**
    
-1. **Enlace en el `README.md`:** Puedes agregar un enlace al archivo de documentación desde el `README.md`:
-   ```markdown
-   [Ver la Documentación del programa y pasos para su ejecucion([./readme.md](https://github.com/Alejandra-RAF/GraphWords/blob/main/.github/README.md))
-   ```
+1. Antes de la ejecucion del workflow se recomienda revisar el `README.md`.
 
-2. **Uso de Variables de Entorno:** 
-   - Las credenciales AWS seguras deben situarse en los `secrets` de GitHub.
+2. - Las credenciales AWS seguras deben situarse en los `secrets` de GitHub.
    - ¡No almacenes información sensible directamente en el archivo YAML!
